@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { jobs, sites, organization, userMeta, products } from "@/lib/db/schema";
+import { jobs, jobMeta, sites, organization, userMeta, products } from "@/lib/db/schema";
 import { eq, ne, inArray, count, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/auth/middleware";
-import { successResponse } from "@/lib/utils/api";
+import { successResponse, errorResponse } from "@/lib/utils/api";
+import { setMetaValue, callUpdateJobPipeline } from "@/lib/db/helpers";
+import { z } from "zod";
 
 export const GET = withAuth(async (_user, req: NextRequest) => {
   const { searchParams } = new URL(req.url);
@@ -11,28 +13,49 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
   const limit = parseInt(searchParams.get("limit") || "200");
   const offset = parseInt(searchParams.get("offset") || "0");
 
-  // Build query
-  const conditions = pipeline
-    ? eq(jobs.pipeline, pipeline)
-    : ne(jobs.pipeline, "completed");
+  // Build query - fetch active jobs + recent completed separately
+  const selectFields = {
+    id: jobs.id,
+    pipeline: jobs.pipeline,
+    name: jobs.name,
+    client: jobs.client,
+    clientId: jobs.clientId,
+    clientType: jobs.clientType,
+    dates: jobs.dates,
+    siteId: jobs.siteId,
+    products: jobs.products,
+  };
 
-  const jobRows = await db
-    .select({
-      id: jobs.id,
-      pipeline: jobs.pipeline,
-      name: jobs.name,
-      client: jobs.client,
-      clientId: jobs.clientId,
-      clientType: jobs.clientType,
-      dates: jobs.dates,
-      siteId: jobs.siteId,
-      products: jobs.products,
-    })
-    .from(jobs)
-    .where(conditions)
-    .limit(limit)
-    .offset(offset)
-    .orderBy(jobs.id);
+  let jobRows;
+
+  if (pipeline) {
+    jobRows = await db
+      .select(selectFields)
+      .from(jobs)
+      .where(eq(jobs.pipeline, pipeline))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(jobs.id);
+  } else {
+    // Active jobs (all non-completed)
+    const activeJobs = await db
+      .select(selectFields)
+      .from(jobs)
+      .where(ne(jobs.pipeline, "completed"))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(jobs.id);
+
+    // Recent completed (last 50)
+    const completedJobs = await db
+      .select(selectFields)
+      .from(jobs)
+      .where(eq(jobs.pipeline, "completed"))
+      .limit(50)
+      .orderBy(sql`${jobs.id} DESC`);
+
+    jobRows = [...activeJobs, ...completedJobs];
+  }
 
   // Collect unique site IDs and client IDs
   const siteIds = [...new Set(jobRows.map((j) => j.siteId))];
@@ -107,12 +130,11 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
           ? userNameMap[clientId]
           : "Unknown";
 
-    const productList = Array.isArray(job.products)
-      ? (job.products as number[]).map((pid) => ({
-          id: pid,
-          name: productMap[pid] || `Product ${pid}`,
-        }))
-      : [];
+    const rawProducts = Array.isArray(job.products) ? job.products : [];
+    const productList = rawProducts.map((p: any) => {
+      const pid = typeof p === "number" ? p : p?.id;
+      return { id: pid, name: productMap[pid] || `Product ${pid}` };
+    });
 
     return {
       id: job.id,
@@ -140,4 +162,56 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
   }
 
   return successResponse({ jobs: enrichedJobs, counts });
+});
+
+const createJobSchema = z.object({
+  name: z.string().min(1, "Job name is required").max(255),
+  siteId: z.number({ message: "Site is required" }).int().positive(),
+  clientId: z.number({ message: "Client is required" }).int().positive(),
+  clientType: z.enum(["organization", "user"]).default("organization"),
+  dateRequested: z.string().nullable().optional(),
+  products: z.array(z.number().int().positive()).optional().default([]),
+  notes: z.string().optional(),
+  amountPayable: z.string().optional(),
+});
+
+export const POST = withAuth(async (user, req: NextRequest) => {
+  try {
+    const body = await req.json();
+    const parsed = createJobSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return errorResponse(parsed.error.issues[0].message);
+    }
+
+    const { name, siteId, clientId, clientType, dateRequested, products: productIds, notes, amountPayable } = parsed.data;
+
+    const result = await db.insert(jobs).values({
+      name,
+      siteId,
+      client: { id: clientId, type: clientType },
+      dates: { requested: dateRequested || new Date().toISOString().split("T")[0] },
+      products: productIds,
+      pipeline: "bids",
+      createdBy: user.id,
+    });
+
+    const insertedId = result[0].insertId;
+
+    // Set optional meta values
+    if (notes) {
+      await setMetaValue(db, jobMeta, jobMeta.jobId, insertedId, "notes", notes);
+    }
+    if (amountPayable) {
+      await setMetaValue(db, jobMeta, jobMeta.jobId, insertedId, "amount_payable", amountPayable);
+    }
+
+    // Recalculate pipeline
+    await callUpdateJobPipeline(db, insertedId);
+
+    return successResponse({ id: insertedId, name }, 201);
+  } catch (error) {
+    console.error("[API] Create job error:", error);
+    return errorResponse("Failed to create job", 500);
+  }
 });

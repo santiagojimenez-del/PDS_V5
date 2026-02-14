@@ -1,9 +1,9 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { tilesets, userMeta } from "@/lib/db/schema";
 import { inArray, count } from "drizzle-orm";
 import { withAuth } from "@/lib/auth/middleware";
-import { successResponse } from "@/lib/utils/api";
+import { successResponse, errorResponse } from "@/lib/utils/api";
 
 export const GET = withAuth(async (_user, req: NextRequest) => {
   const tilesetRows = await db
@@ -52,4 +52,28 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
   }));
 
   return successResponse({ tilesets: enriched, total: enriched.length });
+});
+
+export const POST = withAuth(async (user, req: NextRequest) => {
+  try {
+    const body = await req.json();
+    const { name, description, path, preset } = body;
+
+    if (!name || !path) {
+      return errorResponse("Missing required fields", 400);
+    }
+
+    const [result] = await db.insert(tilesets).values({
+      name,
+      description,
+      path,
+      preset,
+      createdBy: user.id,
+      published: 0,
+    });
+
+    return successResponse({ id: result.insertId });
+  } catch (err) {
+    return errorResponse("Failed to create tileset", 500);
+  }
 });

@@ -84,13 +84,13 @@
   --chart-4: #2c2c2c;
   --chart-5: #737373;
   /* Sidebar - dark style */
-  --sidebar: #2c2c2c;
+  --sidebar: #404040;
   --sidebar-foreground: #e5e5e5;
   --sidebar-primary: #ff6600;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #3d3d3d;
+  --sidebar-accent: #515151;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #3d3d3d;
+  --sidebar-border: #515151;
   --sidebar-ring: #ff6600;
 }
 
@@ -132,6 +132,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
   body {
     @apply bg-background text-foreground;

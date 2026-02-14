@@ -116,7 +116,7 @@ export default function ClientJobDetailPage() {
                 {job.products.map((product: string, i: number) => (
                   <div key={i} className="flex items-center justify-between rounded border p-2">
                     <span className="text-sm font-medium">{product}</span>
-                    <Link href={`/client/job/${job.id}/product/${i + 1}`}>
+                    <Link href={`/client/job/${job.id}/product/${i}`}>
                       <Badge variant="outline" className="cursor-pointer text-xs hover:bg-accent">
                         View
                       </Badge>

@@ -14,7 +14,7 @@ export const users = mysqlTable(
     id: int("ID").autoincrement().primaryKey().notNull(),
     email: varchar("Email", { length: 255 }).notNull(),
     password: text("Password"),
-    tokens: json("Tokens"),
+    tokens: text("Tokens"),
   },
   (table) => [uniqueIndex("Email_2").on(table.email)]
 );

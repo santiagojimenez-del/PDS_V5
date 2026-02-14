@@ -92,6 +92,7 @@ const ROUTE_MAP: Record<string, string> = {
   "/tilesets/": "/tilesets",
   "/tilesets/manage.php": "/tilesets/manage",
   "/onboard/contact/": "/onboard/contact",
+  "/onboard/contact/manage.php": "/onboard/contact/manage",
   "/onboard/company/": "/onboard/company",
   "/onboard/company/manage.php": "/onboard/company/manage",
   // Admin
@@ -159,10 +160,18 @@ export async function getNavigation(
     const design = parseJson(page.design) as { icon?: string; title?: string } | null;
     const navGroup = parseJson(page.navGroup) as { group?: string; dropdown?: { icon: string; title: string } } | null;
 
+    // Build a descriptive title: if title is generic (Add, Manage, View, Edit)
+    // and we have a dropdown context, append the dropdown title for clarity
+    let title = design?.title || page.page;
+    const genericTitles = ["add", "manage", "view", "edit", "list", "search", "new"];
+    if (navGroup?.dropdown?.title && genericTitles.includes(title.toLowerCase())) {
+      title = `${title} ${navGroup.dropdown.title}`;
+    }
+
     accessiblePages.push({
       pageId: page.pageId,
       page: mapRoute(page.page),
-      title: design?.title || page.page,
+      title,
       icon: design?.icon || "",
       group: navGroup?.group || null,
       dropdown: navGroup?.dropdown || null,

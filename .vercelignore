@@ -1,0 +1,8 @@
+.env
+.env.*
+dump*.sql
+scripts/
+docker/
+docker-compose.yml
+Dockerfile
+.dockerignore

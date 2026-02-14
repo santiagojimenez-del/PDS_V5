@@ -19,9 +19,12 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { TwoFactorModal } from "@/modules/auth/components/two-factor-modal";
+import { useTheme } from "@/components/providers/theme-provider";
+import { IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [verificationToken, setVerificationToken] = useState("");
@@ -75,6 +78,28 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      {/* Theme selector */}
+      <div className="absolute right-4 top-4 flex items-center gap-0.5 rounded-lg border bg-card p-1">
+        {([
+          { value: "light", icon: IconSun },
+          { value: "dark", icon: IconMoon },
+          { value: "system", icon: IconDeviceDesktop },
+        ] as const).map(({ value, icon: Icon }) => (
+          <button
+            key={value}
+            onClick={() => setTheme(value)}
+            className={`rounded-md p-1.5 transition-colors ${
+              theme === value
+                ? "bg-[#ff6600] text-white"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title={value.charAt(0).toUpperCase() + value.slice(1)}
+          >
+            <Icon className="h-4 w-4" />
+          </button>
+        ))}
+      </div>
+
       <Card className="w-full max-w-md border shadow-sm">
         <CardHeader className="space-y-4 text-center pb-2">
           <div className="mx-auto flex items-center justify-center">
@@ -83,7 +108,15 @@ export default function LoginPage() {
               alt="Professional Drone Solutions"
               width={200}
               height={60}
-              className="h-14 w-auto"
+              className="h-14 w-auto dark:hidden"
+              priority
+            />
+            <Image
+              src="/img/PDSLogo2.png"
+              alt="Professional Drone Solutions"
+              width={200}
+              height={60}
+              className="hidden h-14 w-auto dark:block"
               priority
             />
           </div>

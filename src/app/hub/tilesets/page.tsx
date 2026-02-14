@@ -5,8 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IconLayersLinked, IconSearch, IconEye, IconEyeOff } from "@tabler/icons-react";
+import { IconLayersLinked, IconSearch, IconEye, IconEyeOff, IconPlus } from "@tabler/icons-react";
 import { useState } from "react";
+import { UploadDialog } from "@/modules/upload/components/upload-dialog";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface TilesetData {
   id: number;
@@ -27,7 +30,34 @@ async function fetchTilesets() {
 
 export default function TilesetsPage() {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useQuery({ queryKey: ["tilesets"], queryFn: fetchTilesets });
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const queryClient = useQuery({ queryKey: ["tilesets"], queryFn: fetchTilesets });
+  const { data, isLoading } = queryClient;
+
+  const handleUploadComplete = async (uploadData: any) => {
+    // Automatically register the tileset in the database
+    try {
+      const res = await fetch("/api/tilesets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: uploadData.fileName.replace(/\.[^/.]+$/, ""), // Remove extension
+          path: uploadData.finalPath,
+          description: `Uploaded on ${new Date().toLocaleString()}`,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Tileset registered successfully");
+        queryClient.refetch();
+        setUploadOpen(false);
+      } else {
+        toast.error("Failed to register tileset");
+      }
+    } catch {
+      toast.error("An error occurred while registering the tileset");
+    }
+  };
 
   const filtered = data?.tilesets.filter(
     (t) => t.name.toLowerCase().includes(search.toLowerCase())
@@ -40,7 +70,19 @@ export default function TilesetsPage() {
           <h2 className="text-2xl font-bold text-foreground">Tilesets</h2>
           <p className="text-muted-foreground">{data?.total || 0} tilesets available.</p>
         </div>
+        <Button onClick={() => setUploadOpen(true)}>
+          <IconPlus className="mr-2 h-4 w-4" />
+          New Tileset
+        </Button>
       </div>
+
+      <UploadDialog
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUploadComplete={handleUploadComplete}
+        title="Upload New Tileset"
+        description="Select a .mbtiles or .tif file to upload. It will be stored securely."
+      />
 
       <div className="relative max-w-sm">
         <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

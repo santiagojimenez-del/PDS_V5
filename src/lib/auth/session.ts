@@ -35,7 +35,6 @@ export async function setSessionCookie(token: string): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    domain: process.env.NODE_ENV === "production" ? ".prodrones.com" : undefined,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 }

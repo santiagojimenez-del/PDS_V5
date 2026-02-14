@@ -6,9 +6,9 @@ const IV_LENGTH = 16;
 const BCRYPT_COST = 11;
 
 function getAesKey(): Buffer {
-  const key = process.env.AES_KEY;
+  const key = process.env.AES_KEY?.trim();
   if (!key || key.length !== 32) {
-    throw new Error("AES_KEY must be exactly 32 characters");
+    throw new Error(`AES_KEY must be exactly 32 characters (got ${key?.length || 0})`);
   }
   return Buffer.from(key, "utf-8");
 }

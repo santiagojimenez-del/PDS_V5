@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { sites, users, userMeta, jobs } from "@/lib/db/schema";
 import { eq, inArray, count, sql } from "drizzle-orm";
-import { withAuth } from "@/lib/auth/middleware";
-import { successResponse } from "@/lib/utils/api";
+import { withAuth, withPermission } from "@/lib/auth/middleware";
+import { successResponse, errorResponse } from "@/lib/utils/api";
+import { z } from "zod";
 
 export const GET = withAuth(async (_user, req: NextRequest) => {
   const { searchParams } = new URL(req.url);
@@ -59,15 +60,89 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
 
   const totalResult = await db.select({ total: count() }).from(sites);
 
-  const enriched = siteRows.map((s) => ({
-    id: s.id,
-    name: s.name,
-    description: s.description,
-    address: s.address,
-    coordinates: s.coordinates,
-    createdBy: creatorMap[s.createdBy] || "Unknown",
-    jobCount: jobCountMap[s.id] || 0,
-  }));
+  const enriched = siteRows.map((s) => {
+    let coords: unknown = s.coordinates;
+    if (typeof coords === "string") {
+      try { coords = JSON.parse(coords); } catch { coords = null; }
+    }
+    // Normalize {lat,lng} object to [lat, lng] tuple for the map component
+    let coordsTuple: [number, number] | null = null;
+    if (coords && typeof coords === "object" && !Array.isArray(coords)) {
+      const obj = coords as Record<string, unknown>;
+      if (typeof obj.lat === "number" && typeof obj.lng === "number") {
+        coordsTuple = [obj.lat, obj.lng];
+      }
+    } else if (Array.isArray(coords) && coords.length >= 2) {
+      coordsTuple = [coords[0], coords[1]];
+    }
+
+    let bounds = s.boundary;
+    if (typeof bounds === "string") {
+      try { bounds = JSON.parse(bounds); } catch { bounds = null; }
+    }
+    // Normalize GeoJSON Polygon to [[lat, lng], ...] for Leaflet
+    let boundaryTuples: [number, number][] | null = null;
+    if (bounds && typeof bounds === "object" && !Array.isArray(bounds)) {
+      const geo = bounds as Record<string, unknown>;
+      if (geo.type === "Polygon" && Array.isArray(geo.coordinates)) {
+        const ring = (geo.coordinates as number[][][])[0];
+        if (ring) {
+          // GeoJSON is [lng, lat] → Leaflet needs [lat, lng]
+          boundaryTuples = ring.map(([lng, lat]) => [lat, lng] as [number, number]);
+        }
+      }
+    } else if (Array.isArray(bounds)) {
+      boundaryTuples = bounds as [number, number][];
+    }
+
+    return {
+      id: s.id,
+      name: s.name,
+      description: s.description,
+      address: s.address,
+      coordinates: coordsTuple,
+      boundary: boundaryTuples,
+      createdBy: creatorMap[s.createdBy] || "Unknown",
+      jobCount: jobCountMap[s.id] || 0,
+    };
+  });
 
   return successResponse({ sites: enriched, total: totalResult[0].total });
+});
+
+const createSiteSchema = z.object({
+  name: z.string().min(1, "Name is required").max(255),
+  address: z.string().optional().default(""),
+  description: z.string().optional().default(""),
+  lat: z.number({ message: "Latitude must be a number" }).min(-90).max(90),
+  lng: z.number({ message: "Longitude must be a number" }).min(-180).max(180),
+});
+
+export const POST = withPermission("create_project_site", async (user, req: NextRequest) => {
+  try {
+    const body = await req.json();
+    const parsed = createSiteSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return errorResponse(parsed.error.issues[0].message);
+    }
+
+    const { name, address, description, lat, lng } = parsed.data;
+
+    const result = await db.insert(sites).values({
+      name,
+      address: address || null,
+      description: description || null,
+      coordinates: { lat, lng },
+      boundary: null,
+      createdBy: user.id,
+    });
+
+    const insertedId = result[0].insertId;
+
+    return successResponse({ id: insertedId, name }, 201);
+  } catch (error) {
+    console.error("[API] Create site error:", error);
+    return errorResponse("Failed to create site", 500);
+  }
 });

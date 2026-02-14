@@ -66,36 +66,27 @@ export function Sidebar({
     <>
       {/* Logo area */}
       <div className={cn("flex h-16 items-center border-b border-sidebar-border", collapsed ? "justify-center px-2" : "justify-between px-4")}>
-        {!collapsed && (
-          <Link href="/" className="flex items-center gap-2.5" onClick={onMobileClose}>
+        <Link href="/" className="flex items-center justify-center" onClick={onMobileClose}>
+          {collapsed ? (
             <Image
-              src="/img/PDSLogo1-xsm.png.png"
+              src="/img/SmallLogo.png"
               alt="PDS"
               width={32}
               height={32}
-              className="h-8 w-8 rounded bg-white p-0.5"
+              className="h-8 w-8"
+              priority
             />
-            <div className="flex flex-col">
-              <span className="text-sm font-bold leading-tight text-sidebar-primary-foreground">
-                ProDrones
-              </span>
-              <span className="text-[10px] uppercase tracking-widest text-sidebar-foreground/60">
-                {app === "hub" ? "Hub" : app === "admin" ? "Admin" : "Client"}
-              </span>
-            </div>
-          </Link>
-        )}
-        {collapsed && (
-          <Link href="/" className="flex items-center justify-center">
+          ) : (
             <Image
-              src="/img/PDSLogo1-xsm.png.png"
-              alt="PDS"
-              width={28}
-              height={28}
-              className="h-7 w-7 rounded bg-white p-0.5"
+              src="/img/PDSLogo2.png"
+              alt="Professional Drone Solutions"
+              width={140}
+              height={48}
+              className="h-10 w-auto"
+              priority
             />
-          </Link>
-        )}
+          )}
+        </Link>
         {/* Collapse toggle - desktop only */}
         <Button
           variant="ghost"
