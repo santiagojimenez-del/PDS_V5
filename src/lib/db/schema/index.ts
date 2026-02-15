@@ -13,3 +13,4 @@ export * from "./recurring";
 export * from "./delivery-email";
 export * from "./bulk-action-log";
 export * from "./upload";
+export * from "./email-log";
