@@ -42,6 +42,8 @@ export class TemplateEngine {
           return (await import("./auth/2fa-code")).TwoFactorCodeEmail;
         case "reset-password":
           return (await import("./auth/reset-password")).ResetPasswordEmail;
+        case "password-changed":
+          return (await import("./auth/password-changed")).PasswordChangedEmail;
         case "signup-confirmation":
           return (await import("./auth/signup-confirmation")).SignupConfirmationEmail;
         case "pilot-notification":
@@ -71,6 +73,8 @@ export class TemplateEngine {
         return "Verification Code - ProDrones Hub";
       case "reset-password":
         return "Reset Password - ProDrones Hub";
+      case "password-changed":
+        return "Password Changed - ProDrones Hub";
       case "signup-confirmation":
         return "Confirm Your Account - ProDrones Hub";
       case "pilot-notification": {

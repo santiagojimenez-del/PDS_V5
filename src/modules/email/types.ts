@@ -43,6 +43,7 @@ export interface IEmailProvider {
 export type EmailTemplate =
   | "2fa-code"
   | "reset-password"
+  | "password-changed"
   | "signup-confirmation"
   | "pilot-notification"
   | "delivery-notification"
@@ -58,6 +59,11 @@ export interface EmailTemplateData {
     userName: string;
     resetLink: string;
     expiresInHours: number;
+  };
+  "password-changed": {
+    userName: string;
+    changedAt: string;
+    ipAddress: string;
   };
   "signup-confirmation": {
     userName: string;

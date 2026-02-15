@@ -14,7 +14,7 @@ export const registerSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  token: z.string().min(1, "Registration token is required"),
+  token: z.string().optional(), // Optional - open registration enabled
 });
 
 export const forgotPasswordSchema = z.object({

@@ -1,36 +1,407 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ProDrones Hub V5
 
-## Getting Started
+Professional drone services management platform built with Next.js 16, TypeScript, and modern web technologies.
 
-First, run the development server:
+## 🚀 Features
+
+### Authentication System
+- ✅ **User Registration** - Open registration with email verification
+- ✅ **Login & Logout** - Secure cookie-based session management
+- ✅ **Two-Factor Authentication (2FA)** - Email-based verification codes
+- ✅ **Password Recovery** - Forgot password flow with email reset links
+- ✅ **Password Reset** - Secure token-based password reset
+- ✅ **Session Management** - AES-256-CBC encrypted sessions (30-day expiry)
+- ✅ **Role-Based Access Control** - Granular permissions system
+
+### Email System
+- ✅ **Multi-Provider Support** - Ethereal (dev), Resend, SendGrid
+- ✅ **Professional Templates** - 7+ React-based email templates
+- ✅ **Email Logging** - Full audit trail in database
+- ✅ **Template Engine** - Type-safe template rendering
+
+### Security Features
+- 🔒 **Password Hashing** - Bcrypt (cost 11)
+- 🔒 **Rate Limiting** - Protects against brute force attacks
+- 🔒 **Email Enumeration Prevention** - Security-first design
+- 🔒 **Token Expiry** - Automatic cleanup of expired tokens
+- 🔒 **CSRF Protection** - Built-in Next.js security
+
+### Other Features
+- 📦 **Bulk Operations** - Chunked file upload system
+- 📊 **Workflow Management** - Job pipeline tracking
+- 🗺️ **Interactive Map Viewers** - Leaflet-based visualization
+- 📧 **Email Notifications** - Automated workflow alerts
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 16 (App Router) with Turbopack
+- **Language:** TypeScript
+- **Database:** MySQL with Drizzle ORM
+- **Authentication:** Custom cookie-based sessions
+- **Email:** React Email with multi-provider support
+- **UI Components:** shadcn/ui + Radix UI
+- **Styling:** Tailwind CSS
+- **Forms:** React Hook Form + Zod validation
+- **State Management:** React Server Components
+- **Icons:** Tabler Icons
+
+## 📋 Prerequisites
+
+- Node.js 18+
+- MySQL 8.0+
+- npm/yarn/pnpm/bun
+
+## 🚀 Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd prodrones-hub
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Copy `.env.example` to `.env.local` and configure:
+
+```bash
+# Database
+DATABASE_URL=mysql://root:password@localhost:3309/prodrones_application
+
+# Encryption (REQUIRED - must be exactly 32 characters)
+AES_KEY=your-32-character-encryption-key
+
+# App
+NODE_ENV=development
+PORT=3003
+NEXT_PUBLIC_APP_URL=http://localhost:3003
+
+# Email System
+EMAIL_PROVIDER=ethereal              # Options: ethereal, resend, sendgrid, console
+EMAIL_FROM=noreply@prodrones.com
+EMAIL_FROM_NAME=ProDrones Hub
+
+# Production Email Providers (optional)
+RESEND_API_KEY=re_xxxxxxxxxxxxx     # Get from https://resend.com
+SENDGRID_API_KEY=SG.xxxxxxxxxxxxx   # Get from https://sendgrid.com
+```
+
+### 4. Set up the database
+
+```bash
+# Start MySQL with Docker (optional)
+docker-compose up -d
+
+# The application will auto-create tables on first run
+```
+
+### 5. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3003](http://localhost:3003) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+prodrones-hub/
+├── src/
+│   ├── app/                      # Next.js App Router
+│   │   ├── api/                  # API routes
+│   │   │   └── auth/             # Authentication endpoints
+│   │   ├── auth/                 # Auth pages (login, register, etc.)
+│   │   ├── dashboard/            # Protected dashboard
+│   │   └── layout.tsx            # Root layout
+│   │
+│   ├── modules/                  # Feature modules
+│   │   ├── auth/                 # Authentication module
+│   │   │   ├── services/         # Business logic
+│   │   │   ├── schemas/          # Zod validation
+│   │   │   └── types.ts          # TypeScript types
+│   │   │
+│   │   ├── email/                # Email module
+│   │   │   ├── services/         # Email service & providers
+│   │   │   ├── templates/        # React email templates
+│   │   │   └── types.ts          # Email types
+│   │   │
+│   │   ├── upload/               # File upload module
+│   │   └── viewers/              # Map viewers module
+│   │
+│   ├── lib/                      # Shared utilities
+│   │   ├── db/                   # Database & ORM
+│   │   ├── auth/                 # Auth utilities (crypto, sessions)
+│   │   └── utils/                # General utilities
+│   │
+│   └── components/               # React components
+│       └── ui/                   # shadcn/ui components
+│
+├── public/                       # Static assets
+└── uploads/                      # File uploads (temp & final)
+```
 
-## Learn More
+## 🔐 Authentication Flow
 
-To learn more about Next.js, take a look at the following resources:
+### Registration
+1. User visits `/auth/register`
+2. Fills form: email, password, first name, last name
+3. Server validates, hashes password (bcrypt), creates user
+4. Auto-login → redirect to `/dashboard`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Login
+1. User visits `/auth/login`
+2. Enters email and password
+3. If 2FA enabled → sends 6-digit code via email
+4. User enters code → creates session → redirect to dashboard
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Forgot Password
+1. User visits `/auth/forgot-password`
+2. Enters email address
+3. Receives password reset link (valid 24 hours)
+4. Rate limited: 3 attempts per 15 minutes
 
-## Deploy on Vercel
+### Reset Password
+1. User clicks reset link from email
+2. Enters new password + confirmation
+3. Server validates token, updates password
+4. Sends confirmation email
+5. Auto-login → redirect to `/dashboard`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📧 Email Templates
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The system includes 7 professional email templates:
+
+1. **2fa-code** - Two-factor authentication codes
+2. **reset-password** - Password reset links
+3. **password-changed** - Password change confirmations
+4. **signup-confirmation** - Welcome emails (optional)
+5. **pilot-notification** - Job assignments for pilots
+6. **delivery-notification** - Delivery completed alerts
+7. **job-status-update** - Workflow status changes
+
+All templates are built with React Email and support:
+- Responsive design
+- Dark/light mode compatible
+- Professional branding
+- Type-safe data binding
+
+## 🗄️ Database Schema
+
+### Users Table
+- `ID` - Auto-increment primary key
+- `Email` - Unique user email
+- `Password` - Bcrypt hashed password
+- `Tokens` - JSON array of session/verification tokens
+
+### User_Meta Table
+- `UID` - Foreign key to Users
+- `meta_key` - Metadata key (first_name, last_name, roles, etc.)
+- `meta_value` - Metadata value
+
+### Email_Log Table
+- Tracks all sent emails
+- Stores template data, status, provider
+- Includes preview URLs for development
+
+## 🚢 Deployment
+
+### Build for production
+
+```bash
+npm run build
+npm start
+```
+
+### Environment Setup
+
+1. Set `NODE_ENV=production`
+2. Use production email provider (Resend or SendGrid)
+3. Configure production database
+4. Set secure `AES_KEY` (32 random characters)
+5. Update `NEXT_PUBLIC_APP_URL` to production domain
+
+### Recommended: Vercel Deployment
+
+```bash
+vercel deploy
+```
+
+Configure environment variables in Vercel dashboard.
+
+## 🧪 Testing
+
+### Test Email System (Development)
+
+Using Ethereal (fake SMTP):
+```bash
+EMAIL_PROVIDER=ethereal
+```
+
+Check console for preview URLs when emails are sent.
+
+### Test Authentication Flows
+
+1. **Registration:** Visit `/auth/register`
+2. **Login:** Visit `/auth/login`
+3. **2FA:** Set `two_factor_required: true` in User_Meta
+4. **Password Reset:** Visit `/auth/forgot-password`
+
+## 📝 API Documentation
+
+### Authentication Endpoints
+
+#### `POST /api/auth/register`
+Register new user.
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "fullName": "John Doe",
+      "roles": [3],
+      "permissions": [],
+      "twoFactorRequired": false
+    }
+  }
+}
+```
+
+#### `POST /api/auth/login`
+Authenticate user.
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response (No 2FA):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": { ... }
+  }
+}
+```
+
+**Response (2FA Required):**
+```json
+{
+  "success": true,
+  "data": {
+    "requires2FA": true,
+    "verificationToken": "abc123..."
+  }
+}
+```
+
+#### `POST /api/auth/forgot-password`
+Request password reset.
+
+**Request:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "If an account exists with this email, you will receive a password reset link."
+  }
+}
+```
+
+#### `POST /api/auth/reset-password`
+Reset password with token.
+
+**Request:**
+```json
+{
+  "token": "reset-token-from-email",
+  "password": "newpassword123",
+  "confirmPassword": "newpassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": { ... }
+  }
+}
+```
+
+## 🔧 Common Issues
+
+### AES_KEY Error
+**Problem:** `AES_KEY must be exactly 32 characters`
+
+**Solution:** Generate a secure 32-character key:
+```bash
+node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+```
+
+### Database Connection Error
+**Problem:** Cannot connect to MySQL
+
+**Solution:**
+1. Check MySQL is running
+2. Verify `DATABASE_URL` in `.env.local`
+3. Ensure database exists
+
+### Email Not Sending
+**Problem:** Emails not being delivered
+
+**Solution:**
+1. Check `EMAIL_PROVIDER` setting
+2. Verify API keys (if using Resend/SendGrid)
+3. Use `console` provider for debugging
+4. Check `Email_Log` table for errors
+
+## 📄 License
+
+Proprietary - Professional Drone Solutions
+
+## 🤝 Contributing
+
+Internal project - Contact admin for contribution guidelines.
+
+## 📞 Support
+
+For support, contact: support@prodrones.com
+
+---
+
+Built with ❤️ by the ProDrones Team

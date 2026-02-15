@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import Image from "next/image";
-import { loginSchema, type LoginInput } from "@/modules/auth/schemas/auth-schemas";
+import { resetPasswordSchema, type ResetPasswordInput } from "@/modules/auth/schemas/auth-schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,51 +18,76 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { TwoFactorModal } from "@/modules/auth/components/two-factor-modal";
 import { useTheme } from "@/components/providers/theme-provider";
 import { IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react";
 
-export default function LoginPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
-  const [show2FA, setShow2FA] = useState(false);
-  const [verificationToken, setVerificationToken] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tokenParam = searchParams.get("token");
+    if (!tokenParam) {
+      toast.error("Invalid reset link");
+      router.push("/auth/forgot-password");
+    } else {
+      setToken(tokenParam);
+    }
+  }, [searchParams, router]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
+    watch,
+  } = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      token: token || "",
+    },
   });
 
-  const onSubmit = async (data: LoginInput) => {
+  const password = watch("password");
+
+  const onSubmit = async (data: ResetPasswordInput) => {
+    if (!token) {
+      toast.error("Invalid reset token");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          token,
+        }),
       });
 
       const result = await res.json();
 
       if (!res.ok) {
-        toast.error(result.error || "Login failed");
+        if (result.error?.includes("expired") || result.error?.includes("Invalid")) {
+          toast.error("This reset link has expired or is invalid");
+          setTimeout(() => {
+            router.push("/auth/forgot-password");
+          }, 2000);
+        } else {
+          toast.error(result.error || "Password reset failed");
+        }
         return;
       }
 
-      if (result.requires2FA) {
-        setVerificationToken(result.verificationToken);
-        setShow2FA(true);
-        toast.info("A verification code has been sent to your email");
-        return;
-      }
-
-      toast.success("Login successful");
-      router.push("/");
-      router.refresh();
+      toast.success("Password reset successful! Redirecting...");
+      setTimeout(() => {
+        router.push("/dashboard");
+        router.refresh();
+      }, 1000);
     } catch {
       toast.error("An unexpected error occurred");
     } finally {
@@ -70,11 +95,9 @@ export default function LoginPage() {
     }
   };
 
-  const handle2FASuccess = () => {
-    toast.success("Login successful");
-    router.push("/");
-    router.refresh();
-  };
+  if (!token) {
+    return null; // Will redirect
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -121,38 +144,38 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Welcome back</h1>
-            <CardDescription>Sign in to your ProDrones account</CardDescription>
+            <h1 className="text-xl font-bold tracking-tight">Reset password</h1>
+            <CardDescription>Enter your new password below</CardDescription>
           </div>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@prodrones.com"
-                {...register("email")}
-                autoComplete="email"
-                className="h-10"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="At least 8 characters"
                 {...register("password")}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 className="h-10"
               />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Re-enter your password"
+                {...register("confirmPassword")}
+                autoComplete="new-password"
+                className="h-10"
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
               )}
             </div>
           </CardContent>
@@ -162,22 +185,14 @@ export default function LoginPage() {
               className="h-10 w-full bg-[#ff6600] text-white hover:bg-[#e55c00] font-medium"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "Resetting password..." : "Reset password"}
             </Button>
-            <div className="flex items-center justify-between w-full text-sm">
-              <Link
-                href="/auth/forgot-password"
-                className="text-muted-foreground transition-colors hover:text-[#ff6600]"
-              >
-                Forgot password?
-              </Link>
-              <Link
-                href="/auth/register"
-                className="text-muted-foreground transition-colors hover:text-[#ff6600]"
-              >
-                Create account
-              </Link>
-            </div>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-muted-foreground transition-colors hover:text-[#ff6600]"
+            >
+              Request a new reset link
+            </Link>
           </CardFooter>
         </form>
       </Card>
@@ -186,13 +201,14 @@ export default function LoginPage() {
       <p className="absolute bottom-4 text-xs text-muted-foreground/50">
         Professional Drone Solutions &copy; {new Date().getFullYear()}
       </p>
-
-      <TwoFactorModal
-        open={show2FA}
-        onClose={() => setShow2FA(false)}
-        verificationToken={verificationToken}
-        onSuccess={handle2FASuccess}
-      />
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
