@@ -9,6 +9,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2026-02-15
 
+#### Recurring Job Generation System (RRULE Worker)
+
+- **RRULE Occurrence Generator** (`src/modules/recurring/services/occurrence-generator.ts`)
+  - `generateOccurrences()` - Parse RRULE and generate future occurrences
+  - `previewOccurrences()` - Preview next N occurrences without creating
+  - `validateRRule()` - Validate RRULE syntax
+  - Respects timezone, dtstart, dtend, and windowDays
+  - Prevents duplicates with unique constraint
+  - Updates lastGeneratedThrough automatically
+
+- **Recurring Service Layer** (`src/modules/recurring/services/recurring-service.ts`)
+  - `getTemplateById()` - Get template with enriched data
+  - `createTemplate()` - Create recurring job template
+  - `updateTemplate()` - Update existing template
+  - `deleteTemplate()` - Delete with validation
+  - `createJobFromOccurrence()` - Convert occurrence to actual Job
+  - `processActiveTemplates()` - Main worker function
+    - Generates occurrences for all active templates
+    - Creates jobs from due occurrences (past dates)
+    - Returns processing statistics
+
+- **API Endpoints** - Complete REST API + Worker
+  - `POST /api/recurring` - Create template
+  - `GET /api/recurring/:id` - Get single template
+  - `PUT /api/recurring/:id` - Update template
+  - `DELETE /api/recurring/:id` - Delete template
+  - `POST /api/recurring/:id/generate` - Manual occurrence generation
+  - `POST /api/cron/recurring-jobs` - Worker endpoint (Vercel Cron)
+  - `GET /api/cron/recurring-jobs` - Health check
+
+- **Vercel Cron Configuration** (`vercel.json`)
+  - Hourly execution (0 * * * *)
+  - Calls /api/cron/recurring-jobs automatically
+  - CRON_SECRET authentication in production
+
+- **Validation & Types**
+  - Zod schemas for create/update templates
+  - TypeScript interfaces for templates and occurrences
+  - Support for RRULE (RFC 5545 standard)
+  - Client type enum (user/organization)
+  - Occurrence status enum (planned/created/skipped/cancelled)
+
+- **Worker Features**
+  - Automatic hourly processing via Vercel Cron
+  - Generates occurrences within windowDays (default 60)
+  - Creates jobs from occurrences with past dates
+  - Comprehensive error handling and logging
+  - Processing statistics and error reporting
+
+- **Security**
+  - CRON_SECRET authentication for worker endpoint
+  - Authentication required on all CRUD endpoints
+  - Cannot delete templates with created jobs
+  - Comprehensive input validation
+
+- **Documentation** (`RECURRING-JOBS.md`)
+  - Complete architecture diagram
+  - RRULE examples (weekly, monthly, quarterly, etc.)
+  - API reference with cURL examples
+  - Worker processing flow documentation
+  - Troubleshooting guide
+  - Monitoring queries
+
 #### Complete Organization CRUD System
 
 - **Organization Service Layer** (`src/modules/organizations/services/organization-service.ts`)

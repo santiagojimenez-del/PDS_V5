@@ -110,7 +110,13 @@ Los tilesets pueden ser archivos de varios GB. Se necesita un sistema de chunked
    - Types: TypeScript interfaces and Zod inferred types (Completed)
    - Security: Job validation on delete, authentication required (Completed)
    - Documentation: ORGANIZATION-CRUD.md (Completed)
-7. Recurring Job Generation (RRULE worker)
+7. ~~Recurring Job Generation (RRULE worker)~~ **DONE** (2026-02-15)
+   - RRULE Occurrence Generator: generateOccurrences(), previewOccurrences(), validateRRule() (Completed)
+   - Service Layer: CRUD + processActiveTemplates() worker function (Completed)
+   - API Routes: POST, GET/:id, PUT/:id, DELETE/:id, generate endpoint (Completed)
+   - Worker Endpoint: /api/cron/recurring-jobs with CRON_SECRET auth (Completed)
+   - Vercel Cron: Configured hourly execution (Completed)
+   - Documentation: RECURRING-JOBS.md with examples and troubleshooting (Completed)
 8. Viewer Socket.IO events
 9. Stored Procedure integration completa
 

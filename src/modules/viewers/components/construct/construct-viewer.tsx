@@ -55,9 +55,9 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
 
   // Center map on site
   useEffect(() => {
-    if (data?.site?.coordinates && mapInstance.current) {
+    if (data?.site?.coordinates && mapInstance) {
       const [lat, lng] = data.site.coordinates;
-      mapInstance.current.setView([lat, lng], 16);
+      mapInstance.setView([lat, lng], 16);
     }
   }, [data?.site?.coordinates, mapInstance]);
 
@@ -113,8 +113,10 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
         backUrl={data?.job.id ? `/client/job/${data.job.id}` : undefined}
       />
 
+      {/* Map container div for Leaflet */}
+      <div ref={mapRef} className="absolute inset-0 z-0" />
+
       <MapDisplay
-        mapRef={mapRef}
         mapInstance={mapInstance}
         features={features}
         classifications={classifications}
