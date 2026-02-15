@@ -93,10 +93,23 @@ Los tilesets pueden ser archivos de varios GB. Se necesita un sistema de chunked
    - Template Engine: React Email → HTML rendering (Completed)
    - Documentation: `EMAIL-SYSTEM.md` (Completed)
    - Test Script: `scripts/test-email.ts` (Completed)
+5. ~~Signup/Forgot/Reset Password~~ **DONE** (2026-02-15)
+   - Service Functions: register(), forgotPassword(), resetPassword() (Completed)
+   - API Routes: /api/auth/register, /api/auth/forgot-password, /api/auth/reset-password (Completed)
+   - Frontend Pages: /auth/register, /auth/forgot-password, /auth/reset-password (Completed)
+   - Email Templates: password-changed.tsx (Completed)
+   - Security: Rate limiter, email enumeration prevention, token expiry (Completed)
+   - Fix: 2FA email sending in login flow (Completed)
+   - Documentation: Complete README.md + CHANGELOG.md (Completed)
 
 ### P1 - High Priority
-5. **Signup/Forgot/Reset Password** ← SIGUIENTE - Integrar email system con auth
-6. Complete Organization CRUD
+6. ~~Complete Organization CRUD~~ **DONE** (2026-02-15)
+   - Schemas: createOrganizationSchema, updateOrganizationSchema (Completed)
+   - Service Layer: CRUD functions with metadata support (Completed)
+   - API Routes: GET, POST, GET/:id, PUT/:id, DELETE/:id (Completed)
+   - Types: TypeScript interfaces and Zod inferred types (Completed)
+   - Security: Job validation on delete, authentication required (Completed)
+   - Documentation: ORGANIZATION-CRUD.md (Completed)
 7. Recurring Job Generation (RRULE worker)
 8. Viewer Socket.IO events
 9. Stored Procedure integration completa

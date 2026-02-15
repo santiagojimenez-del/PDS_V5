@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2026-02-15
 
+#### Complete Organization CRUD System
+
+- **Organization Service Layer** (`src/modules/organizations/services/organization-service.ts`)
+  - `getOrganizationById(id)` - Get single organization with all metadata
+  - `getAllOrganizations()` - List all organizations with job/contact counts
+  - `createOrganization(input)` - Create organization with metadata
+  - `updateOrganization(id, input)` - Update organization and metadata
+  - `deleteOrganization(id)` - Delete with job validation
+
+- **API Endpoints** - Complete REST API for organizations
+  - `GET /api/organizations` - List all organizations (refactored to use service)
+  - `POST /api/organizations` - Create new organization
+  - `GET /api/organizations/:id` - Get single organization
+  - `PUT /api/organizations/:id` - Update organization
+  - `DELETE /api/organizations/:id` - Delete organization with job check
+
+- **Validation Schemas** (`src/modules/organizations/schemas/organization-schemas.ts`)
+  - `createOrganizationSchema` - Name (required), address, contacts, location
+  - `updateOrganizationSchema` - Partial update, at least one field required
+  - `organizationMetaSchema` - Meta key-value validation
+
+- **TypeScript Types** (`src/modules/organizations/types.ts`)
+  - `Organization` interface with all metadata fields
+  - `OrganizationMeta` interface for EAV pattern
+  - `OrganizationWithMeta` for enriched responses
+
+- **Metadata Support** - Full EAV (Entity-Attribute-Value) pattern
+  - address, streetAddress, city, state, zipCode
+  - logo URL support
+  - contacts array (JSON stored)
+  - Automatic contact/job count aggregation
+
+- **Security Features**
+  - Cannot delete organizations with associated jobs
+  - All endpoints require authentication
+  - Comprehensive validation on all inputs
+  - Metadata cleanup on delete
+
+- **Documentation** (`ORGANIZATION-CRUD.md`)
+  - Complete API reference with examples
+  - cURL test commands
+  - Testing checklist
+  - Frontend integration guide
+  - Error handling documentation
+
+### Added - 2026-02-15 (Earlier)
+
 #### Authentication System
 - **User Registration Flow** (`/auth/register`)
   - Open registration with email, password, first name, last name

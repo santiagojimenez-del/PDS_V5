@@ -1,60 +1,46 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
-import { organization, organizationMeta, jobs } from "@/lib/db/schema";
-import { eq, count, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/auth/middleware";
-import { successResponse } from "@/lib/utils/api";
+import { successResponse, errorResponse } from "@/lib/utils/api";
+import { createOrganizationSchema } from "@/modules/organizations/schemas/organization-schemas";
+import { getAllOrganizations, createOrganization } from "@/modules/organizations/services/organization-service";
 
+/**
+ * GET /api/organizations
+ * List all organizations with metadata
+ */
 export const GET = withAuth(async (_user, req: NextRequest) => {
-  const orgRows = await db
-    .select({ id: organization.id, name: organization.name })
-    .from(organization)
-    .orderBy(organization.name);
-
-  // Get meta for all orgs
-  const metaRows = await db
-    .select({
-      orgId: organizationMeta.orgId,
-      metaKey: organizationMeta.metaKey,
-      metaValue: organizationMeta.metaValue,
-    })
-    .from(organizationMeta);
-
-  const metaByOrg: Record<number, Record<string, string>> = {};
-  for (const m of metaRows) {
-    if (!metaByOrg[m.orgId]) metaByOrg[m.orgId] = {};
-    metaByOrg[m.orgId][m.metaKey] = m.metaValue;
+  try {
+    const organizations = await getAllOrganizations();
+    return successResponse({ organizations, total: organizations.length });
+  } catch (error: any) {
+    console.error("[API] Get organizations error:", error);
+    return errorResponse(error.message || "Failed to fetch organizations", 500);
   }
+});
 
-  // Get job counts per org (client_type = 'organization')
-  const jobCounts = await db
-    .select({ clientId: jobs.clientId, count: count() })
-    .from(jobs)
-    .where(eq(jobs.clientType, "organization"))
-    .groupBy(jobs.clientId);
+/**
+ * POST /api/organizations
+ * Create a new organization
+ */
+export const POST = withAuth(async (_user, req: NextRequest) => {
+  let step = "init";
+  try {
+    step = "reading body";
+    const body = await req.json();
 
-  const jobCountMap: Record<string, number> = {};
-  for (const jc of jobCounts) {
-    if (jc.clientId) jobCountMap[jc.clientId] = jc.count;
+    step = "validating";
+    const parsed = createOrganizationSchema.safeParse(body);
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message || "Invalid input";
+      return errorResponse(firstError, 422);
+    }
+
+    step = "creating organization";
+    const newOrganization = await createOrganization(parsed.data);
+
+    return successResponse({ organization: newOrganization }, 201);
+  } catch (error: any) {
+    console.error("[API] Create organization error at step:", step, error);
+    return errorResponse(`Error at [${step}]: ${error?.message || "unknown"}`, 500);
   }
-
-  const enriched = orgRows.map((o) => {
-    const meta = metaByOrg[o.id] || {};
-    let contactCount = 0;
-    try {
-      const contacts = JSON.parse(meta.contacts || "[]");
-      contactCount = Array.isArray(contacts) ? contacts.length : 0;
-    } catch { /* ignore */ }
-
-    return {
-      id: o.id,
-      name: o.name,
-      address: meta.address || null,
-      logo: meta.logo || null,
-      contactCount,
-      jobCount: jobCountMap[String(o.id)] || 0,
-    };
-  });
-
-  return successResponse({ organizations: enriched, total: enriched.length });
 });
