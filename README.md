@@ -26,6 +26,15 @@ Professional drone services management platform built with Next.js 16, TypeScrip
 - 🔒 **Token Expiry** - Automatic cleanup of expired tokens
 - 🔒 **CSRF Protection** - Built-in Next.js security
 
+### Map Viewers
+- ✅ **Interactive Viewers** - Three specialized viewers: Landscape, Construct, Community
+- ✅ **Unified Control Panel** - Tabbed interface for Views and Layers
+- ✅ **Saved Views** - Bookmark and return to specific map positions
+- ✅ **Classification System** - Color-coded polygon categories
+- ✅ **Drawing Tools** - Polygon and rectangle drawing with Leaflet
+- ✅ **Tileset Overlay** - Toggle aerial imagery on/off
+- ✅ **Persistent Storage** - All drawings and classifications auto-save
+
 ### Other Features
 - 📦 **Bulk Operations** - Chunked file upload system
 - 📊 **Workflow Management** - Job pipeline tracking
@@ -43,6 +52,7 @@ Professional drone services management platform built with Next.js 16, TypeScrip
 - **Styling:** Tailwind CSS
 - **Forms:** React Hook Form + Zod validation
 - **State Management:** React Server Components
+- **Maps:** Leaflet.js for interactive viewers
 - **Icons:** Tabler Icons
 
 ## 📋 Prerequisites
@@ -359,6 +369,29 @@ Reset password with token.
   "success": true,
   "data": {
     "user": { ... }
+  }
+}
+```
+
+### Viewer Endpoints
+
+#### `GET /api/viewer/[jobProductId]`
+Fetch viewer data including job, site, tileset, and deliverables.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "job": { "id": 5, "name": "Project Name" },
+    "site": { "id": 1, "name": "Site Name", "coordinates": [27.0, -81.8] },
+    "product": { "id": 1, "name": "Landscape Viewer" },
+    "tileset": { "id": 1, "path": "tileset/path" },
+    "deliverables": {
+      "features": "{...}",
+      "classifications": "[...]",
+      "saved_views": "[...]"
+    }
   }
 }
 ```
