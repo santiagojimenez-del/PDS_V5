@@ -85,7 +85,7 @@ function ResetPasswordForm() {
 
       toast.success("Password reset successful! Redirecting...");
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/auth/login");
         router.refresh();
       }, 1000);
     } catch {

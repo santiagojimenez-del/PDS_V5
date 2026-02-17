@@ -20,6 +20,7 @@ import {
   IconChevronRight,
 } from "@tabler/icons-react";
 import { useTheme } from "@/components/providers/theme-provider";
+import { GlobalSearch } from "@/components/shared/global-search";
 import type { AuthUser } from "@/modules/auth/types";
 
 interface NavbarProps {
@@ -70,9 +71,9 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
   }));
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+    <header className="flex h-14 items-center justify-between gap-4 border-b border-border bg-card px-4 lg:px-6">
       {/* Left: hamburger + breadcrumbs */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -106,8 +107,13 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
         </span>
       </div>
 
+      {/* Center: Global Search */}
+      <div className="hidden flex-1 items-center justify-center px-4 md:flex">
+        <GlobalSearch />
+      </div>
+
       {/* Right: theme toggle + user menu */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

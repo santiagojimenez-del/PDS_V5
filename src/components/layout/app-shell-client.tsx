@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
+import { KeyboardShortcuts } from "@/components/shared/keyboard-shortcuts";
 import type { NavGroup } from "@/modules/permissions/types";
 import type { AuthUser } from "@/modules/auth/types";
 
@@ -26,24 +27,29 @@ export function AppShellClient({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar
-        navigation={navigation}
-        siteTitle={siteTitle}
-        siteLogo={siteLogo}
-        app={app}
-        user={user}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar
-          user={user}
+    <>
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar
+          navigation={navigation}
           siteTitle={siteTitle}
-          onMobileMenuToggle={() => setMobileOpen(!mobileOpen)}
+          siteLogo={siteLogo}
+          app={app}
+          user={user}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
         />
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Navbar
+            user={user}
+            siteTitle={siteTitle}
+            onMobileMenuToggle={() => setMobileOpen(!mobileOpen)}
+          />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+
+      {/* Global keyboard shortcuts */}
+      <KeyboardShortcuts />
+    </>
   );
 }

@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { LOGOS } from "@/lib/constants/assets";
+import { RecentItems } from "@/components/shared/recent-items";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -72,7 +75,7 @@ export function Sidebar({
         <Link href="/" className="flex items-center justify-center" onClick={onMobileClose}>
           {collapsed ? (
             <Image
-              src="/img/SmallLogo.png"
+              src={LOGOS.SMALL_ALT}
               alt="PDS"
               width={32}
               height={32}
@@ -81,7 +84,7 @@ export function Sidebar({
             />
           ) : (
             <Image
-              src="/img/PDSLogo2.png"
+              src={LOGOS.LARGE_DARK}
               alt="Professional Drone Solutions"
               width={140}
               height={48}
@@ -163,6 +166,14 @@ export function Sidebar({
           ))}
         </nav>
       </ScrollArea>
+
+      {/* Recent Items */}
+      {!collapsed && (
+        <>
+          <Separator className="bg-sidebar-border" />
+          <RecentItems collapsed={collapsed} />
+        </>
+      )}
 
       {/* User footer */}
       <div className={cn("border-t border-sidebar-border", collapsed ? "p-2" : "p-3")}>

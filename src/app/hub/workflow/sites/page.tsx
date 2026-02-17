@@ -24,6 +24,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconPlus,
+  IconDownload,
 } from "@tabler/icons-react";
 import { useState, useMemo, lazy, Suspense } from "react";
 import { useCurrentUser, useHasPermission } from "@/modules/permissions/hooks/use-permissions";
@@ -120,6 +121,25 @@ export default function SitesPage() {
     }
   }
 
+  async function handleExport() {
+    try {
+      const response = await fetch("/api/workflow/sites/export");
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sites_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Failed to export sites:", error);
+    }
+  }
+
   const filtered = useMemo(() =>
     data?.sites.filter(
       (s) =>
@@ -141,6 +161,9 @@ export default function SitesPage() {
           <p className="text-muted-foreground">{data?.total || 0} project sites registered.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <IconDownload className="mr-1.5 h-4 w-4" /> Export CSV
+          </Button>
           {canCreateSite && (
             <Button size="sm" onClick={() => { resetForm(); setDialogOpen(true); }}>
               <IconPlus className="mr-1.5 h-4 w-4" /> New Site
