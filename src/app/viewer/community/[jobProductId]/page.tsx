@@ -1,11 +1,19 @@
 "use client";
 
-import { use } from "react";
+import { useParams } from "next/navigation";
 import { CommunityViewer } from "@/modules/viewers/components/community/community-viewer";
-import type { ViewerPageProps } from "@/modules/viewers/types";
 
-export default function CommunityPage({ params }: ViewerPageProps) {
-  const { jobProductId } = use(params);
+export default function CommunityPage() {
+  const params = useParams();
+  const jobProductId = params?.jobProductId as string;
+
+  if (!jobProductId) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-muted-foreground">Invalid viewer URL</p>
+      </div>
+    );
+  }
 
   return <CommunityViewer jobProductId={jobProductId} />;
 }

@@ -16,8 +16,18 @@ const VIEWER_TYPE_MAP: Record<number, string> = {
 
 export default function ClientProductPage() {
   const params = useParams();
-  const jobId = params.id as string;
-  const productId = params.productId as string;
+  const jobId = params?.id as string;
+  const productId = params?.productId as string;
+
+  // Safety check
+  if (!jobId || !productId) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-muted-foreground">Invalid product URL</p>
+      </div>
+    );
+  }
+
   const productIndex = parseInt(productId, 10);
 
   const jobProductId = `${jobId}-${productIndex}`;

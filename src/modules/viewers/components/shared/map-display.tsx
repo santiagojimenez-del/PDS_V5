@@ -147,6 +147,18 @@ export function MapDisplay({
       });
       map.addControl(drawControlRef.current);
 
+      // Center the draw controls after adding to map
+      setTimeout(() => {
+        const drawContainer = document.querySelector('.leaflet-draw.leaflet-control') as HTMLElement;
+        if (drawContainer) {
+          drawContainer.style.position = 'absolute';
+          drawContainer.style.left = '50%';
+          drawContainer.style.top = '100px';
+          drawContainer.style.transform = 'translateX(-50%)';
+          drawContainer.style.zIndex = '1000';
+        }
+      }, 10);
+
       const onCreated = (e: any) => {
         const layer = e.layer as L.Polygon;
         const latLngs = layer.getLatLngs()[0] as L.LatLng[];

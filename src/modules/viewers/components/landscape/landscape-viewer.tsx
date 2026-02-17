@@ -5,8 +5,7 @@ import { ViewerContainer } from "../shared/viewer-container";
 import { MapDisplay } from "../shared/map-display";
 import { Toolbar } from "../shared/toolbar";
 import { ClassificationSidebar } from "../shared/classification-sidebar";
-import { ViewsPanel } from "./views-panel";
-import { LayerToggle } from "./layer-toggle";
+import { ControlPanel } from "../shared/control-panel";
 import { useMapInstance } from "../../hooks/use-map-instance";
 import { useDrawingTools } from "../../hooks/use-drawing-tools";
 import { useViewerData, useViewerTileset, useUpdateDeliverable } from "../../hooks/use-viewer-data";
@@ -22,10 +21,22 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
   const { data: tileset } = useViewerTileset(jobProductId);
   const updateDeliverable = useUpdateDeliverable(jobProductId);
 
-  const center = data?.site?.coordinates ?? [27.0, -81.8] as [number, number];
+  // Helper to normalize coordinates (handle both array and object formats)
+  const normalizeCoordinates = (coords: any): [number, number] => {
+    if (!coords) return [27.0, -81.8];
+    if (Array.isArray(coords) && coords.length >= 2) {
+      return [coords[0], coords[1]];
+    }
+    if (typeof coords === 'object' && 'lat' in coords && 'lng' in coords) {
+      return [coords.lat, coords.lng];
+    }
+    return [27.0, -81.8];
+  };
+
+  const center = normalizeCoordinates(data?.site?.coordinates);
 
   const { mapRef, mapInstance, flyTo } = useMapInstance({
-    center: center as [number, number],
+    center,
     zoom: 16,
   });
 
@@ -43,12 +54,7 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
   const [classifications, setClassifications] = useState<ClassificationItem[]>([]);
   const [selectedClassificationId, setSelectedClassificationId] = useState<string | null>(null);
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
-  const [layers, setLayers] = useState({
-    tileset: true,
-    parcels: false,
-    roads: false,
-    areas: true,
-  });
+  const [showTileset, setShowTileset] = useState(true);
 
   // Load deliverables into state
   useEffect(() => {
@@ -64,14 +70,16 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
     const loadedViews = parseDeliverableJSON<SavedView[]>(d.saved_views);
     if (loadedViews) setSavedViews(loadedViews);
 
-    const loadedLayers = parseDeliverableJSON<typeof layers>(d.layers);
-    if (loadedLayers) setLayers(loadedLayers);
+    const loadedTilesetState = parseDeliverableJSON<boolean>(d.show_tileset);
+    if (loadedTilesetState !== null && loadedTilesetState !== undefined) {
+      setShowTileset(loadedTilesetState);
+    }
   }, [data?.deliverables, replaceFeatures]);
 
   // Center map on site when data loads
   useEffect(() => {
     if (data?.site?.coordinates && mapInstance) {
-      const [lat, lng] = data.site.coordinates;
+      const [lat, lng] = normalizeCoordinates(data.site.coordinates);
       mapInstance.setView([lat, lng], 16);
     }
   }, [data?.site?.coordinates, mapInstance]);
@@ -95,11 +103,11 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
         value: stringifyDeliverableJSON(savedViews),
       }),
       updateDeliverable.mutateAsync({
-        key: "layers",
-        value: stringifyDeliverableJSON(layers),
+        key: "show_tileset",
+        value: stringifyDeliverableJSON(showTileset),
       }),
     ]);
-  }, [features, classifications, savedViews, layers, updateDeliverable]);
+  }, [features, classifications, savedViews, showTileset, updateDeliverable]);
 
   const handleAddClassification = (item: ClassificationItem) => {
     setClassifications((prev) => [...prev, item]);
@@ -192,7 +200,7 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
         }}
         onFeatureSelected={setSelectedFeatureId}
         onDrawingStop={() => setIsDrawing(false)}
-        tileUrl={layers.tileset ? tileUrl : undefined}
+        tileUrl={showTileset ? tileUrl : undefined}
       />
 
       <ClassificationSidebar
@@ -204,17 +212,14 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
         onColorChange={handleColorChange}
       />
 
-      <ViewsPanel
+      <ControlPanel
         views={savedViews}
         onSaveView={handleSaveView}
         onDeleteView={handleDeleteView}
         onGoToView={handleGoToView}
         getCurrentView={getCurrentView}
-      />
-
-      <LayerToggle
-        layers={layers}
-        onToggle={(key) => setLayers((prev) => ({ ...prev, [key]: !prev[key] }))}
+        showTileset={showTileset}
+        onToggleTileset={() => setShowTileset(!showTileset)}
       />
     </ViewerContainer>
   );

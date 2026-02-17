@@ -49,7 +49,16 @@ export function useMapInstance(options: UseMapInstanceOptions = {}) {
     setMapInstance(map);
 
     // Force resize after render to avoid grey tiles
-    setTimeout(() => map.invalidateSize(), 100);
+    // Add safety check to ensure map is still attached to DOM
+    setTimeout(() => {
+      try {
+        if (map && map.getContainer()) {
+          map.invalidateSize();
+        }
+      } catch (error) {
+        console.warn('Failed to invalidate map size:', error);
+      }
+    }, 100);
 
     return () => {
       map.remove();

@@ -5,11 +5,12 @@ import { ViewerContainer } from "../shared/viewer-container";
 import { MapDisplay } from "../shared/map-display";
 import { Toolbar } from "../shared/toolbar";
 import { ClassificationSidebar } from "../shared/classification-sidebar";
+import { ControlPanel } from "../shared/control-panel";
 import { useMapInstance } from "../../hooks/use-map-instance";
 import { useDrawingTools } from "../../hooks/use-drawing-tools";
 import { useViewerData, useViewerTileset, useUpdateDeliverable } from "../../hooks/use-viewer-data";
 import { parseDeliverableJSON, stringifyDeliverableJSON } from "../../services/deliverables-client";
-import type { ClassificationItem, ViewerFeatureCollection } from "../../types";
+import type { ClassificationItem, SavedView, ViewerFeatureCollection } from "../../types";
 
 interface ConstructViewerProps {
   jobProductId: string;
@@ -20,10 +21,22 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
   const { data: tileset } = useViewerTileset(jobProductId);
   const updateDeliverable = useUpdateDeliverable(jobProductId);
 
-  const center = data?.site?.coordinates ?? [27.0, -81.8] as [number, number];
+  // Helper to normalize coordinates (handle both array and object formats)
+  const normalizeCoordinates = (coords: any): [number, number] => {
+    if (!coords) return [27.0, -81.8];
+    if (Array.isArray(coords) && coords.length >= 2) {
+      return [coords[0], coords[1]];
+    }
+    if (typeof coords === 'object' && 'lat' in coords && 'lng' in coords) {
+      return [coords.lat, coords.lng];
+    }
+    return [27.0, -81.8];
+  };
 
-  const { mapRef, mapInstance } = useMapInstance({
-    center: center as [number, number],
+  const center = normalizeCoordinates(data?.site?.coordinates);
+
+  const { mapRef, mapInstance, flyTo } = useMapInstance({
+    center,
     zoom: 16,
   });
 
@@ -40,6 +53,8 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
 
   const [classifications, setClassifications] = useState<ClassificationItem[]>([]);
   const [selectedClassificationId, setSelectedClassificationId] = useState<string | null>(null);
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
+  const [showTileset, setShowTileset] = useState(true);
 
   // Load deliverables into state
   useEffect(() => {
@@ -51,12 +66,20 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
 
     const loadedClassifications = parseDeliverableJSON<ClassificationItem[]>(d.classifications);
     if (loadedClassifications) setClassifications(loadedClassifications);
+
+    const loadedViews = parseDeliverableJSON<SavedView[]>(d.saved_views);
+    if (loadedViews) setSavedViews(loadedViews);
+
+    const loadedTilesetState = parseDeliverableJSON<boolean>(d.show_tileset);
+    if (loadedTilesetState !== null && loadedTilesetState !== undefined) {
+      setShowTileset(loadedTilesetState);
+    }
   }, [data?.deliverables, replaceFeatures]);
 
   // Center map on site
   useEffect(() => {
     if (data?.site?.coordinates && mapInstance) {
-      const [lat, lng] = data.site.coordinates;
+      const [lat, lng] = normalizeCoordinates(data.site.coordinates);
       mapInstance.setView([lat, lng], 16);
     }
   }, [data?.site?.coordinates, mapInstance]);
@@ -75,8 +98,35 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
         key: "classifications",
         value: stringifyDeliverableJSON(classifications),
       }),
+      updateDeliverable.mutateAsync({
+        key: "saved_views",
+        value: stringifyDeliverableJSON(savedViews),
+      }),
+      updateDeliverable.mutateAsync({
+        key: "show_tileset",
+        value: stringifyDeliverableJSON(showTileset),
+      }),
     ]);
-  }, [features, classifications, updateDeliverable]);
+  }, [features, classifications, savedViews, showTileset, updateDeliverable]);
+
+  const handleSaveView = (view: SavedView) => {
+    setSavedViews((prev) => [...prev, view]);
+  };
+
+  const handleDeleteView = (id: string) => {
+    setSavedViews((prev) => prev.filter((v) => v.id !== id));
+  };
+
+  const handleGoToView = (view: SavedView) => {
+    flyTo(view.center[0], view.center[1], view.zoom);
+  };
+
+  const getCurrentView = (): { center: [number, number]; zoom: number } | null => {
+    const map = mapInstance;
+    if (!map) return null;
+    const c = map.getCenter();
+    return { center: [c.lat, c.lng], zoom: map.getZoom() };
+  };
 
   if (isLoading) {
     return (
@@ -130,7 +180,7 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
         }}
         onFeatureSelected={setSelectedFeatureId}
         onDrawingStop={() => setIsDrawing(false)}
-        tileUrl={tileUrl}
+        tileUrl={showTileset ? tileUrl : undefined}
       />
 
       <ClassificationSidebar
@@ -142,6 +192,16 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
         onColorChange={(id, color) =>
           setClassifications((prev) => prev.map((c) => (c.id === id ? { ...c, color } : c)))
         }
+      />
+
+      <ControlPanel
+        views={savedViews}
+        onSaveView={handleSaveView}
+        onDeleteView={handleDeleteView}
+        onGoToView={handleGoToView}
+        getCurrentView={getCurrentView}
+        showTileset={showTileset}
+        onToggleTileset={() => setShowTileset(!showTileset)}
       />
     </ViewerContainer>
   );
