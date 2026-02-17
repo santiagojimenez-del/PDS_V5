@@ -52,8 +52,11 @@ export function Sidebar({
   };
 
   const getHref = (page: string) => {
-    if (!page || page === "/") return "/";
-    return page.startsWith("/") ? page : `/${page}`;
+    if (!page || page === "/") return `/${app}`;
+    // If page already starts with /, use as is (absolute path)
+    if (page.startsWith("/")) return page;
+    // Otherwise, prepend the app prefix
+    return `/${app}/${page}`;
   };
 
   const isActive = (page: string) => {
