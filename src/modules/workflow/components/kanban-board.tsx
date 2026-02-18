@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -122,6 +123,7 @@ async function fetchJobs(): Promise<JobsResponse> {
 }
 
 export function KanbanBoard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>(PIPELINES.BIDS);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -524,12 +526,13 @@ export function KanbanBoard() {
                   return (
                     <tr
                       key={job.id}
+                      onClick={() => router.push(`/workflow/jobs/${job.id}`)}
                       className={cn(
                         "border-b last:border-0 transition-colors hover:bg-muted/30 cursor-pointer",
                         isSelected && "bg-primary/5"
                       )}
                     >
-                      <td className="w-10 px-3 py-3">
+                      <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleJob(job.id)}
@@ -593,10 +596,14 @@ export function KanbanBoard() {
               const dateInfo = getRelevantDate(job.dates, activeTab);
               const isSelected = selectedJobs.has(job.id);
               return (
-                <Card key={job.id} className={cn("cursor-pointer transition-shadow hover:shadow-md relative", isSelected && "ring-2 ring-primary/30")}>
+                <Card
+                  key={job.id}
+                  onClick={() => router.push(`/workflow/jobs/${job.id}`)}
+                  className={cn("cursor-pointer transition-shadow hover:shadow-md relative", isSelected && "ring-2 ring-primary/30")}
+                >
                   <CardContent className="p-3">
                     <div className="mb-2 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleJob(job.id)}
