@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { PilotSuggestionList } from "@/modules/scheduling/components/pilot-suggestion-list";
 
 interface JobActionDialogsProps {
   jobIds: number[];
@@ -297,23 +298,13 @@ export function JobActionDialogs({
             </div>
             <div className="space-y-2">
               <Label>Assign Staff/Pilots *</Label>
-              <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
-                {staffAndPilots.map((user) => (
-                  <label key={user.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedPersons.includes(user.id)}
-                      onChange={() => handlePersonToggle(user.id)}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <span className="text-sm">
-                      {user.name} ({user.role}) - {user.email}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <PilotSuggestionList
+                scheduledDate={scheduledDate}
+                selectedPilots={selectedPersons}
+                onTogglePilot={handlePersonToggle}
+              />
               {selectedPersons.length === 0 && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-red-600 mt-2">
                   At least one person must be assigned
                 </p>
               )}
