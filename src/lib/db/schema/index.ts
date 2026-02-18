@@ -15,3 +15,4 @@ export * from "./bulk-action-log";
 export * from "./upload";
 export * from "./email-log";
 export * from "./pilot-availability";
+export * from "./invoices";
