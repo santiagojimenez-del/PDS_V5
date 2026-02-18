@@ -1,9 +1,9 @@
 # ProDrones Hub V5 - Project Status
 
-**Last Updated:** February 17, 2026 (Job Management UI Complete)
+**Last Updated:** February 17, 2026 (Pilot Scheduling Phase 1 Complete)
 **Version:** 5.0.0
 **Status:** 🟢 Active Development
-**Overall Completion:** ~87% (Job Management UI implemented)
+**Overall Completion:** ~89% (Pilot Scheduling foundation implemented)
 
 ---
 
@@ -210,12 +210,18 @@ Professional drone services management platform with three distinct applications
 
 ### High Priority
 
-#### 🎫 Pilot Scheduling System
-- [ ] Pilot availability calendar
-- [ ] Job assignment interface
-- [ ] Conflict detection
-- [ ] Pilot notifications
-- [ ] Schedule optimization
+#### 🎫 Pilot Scheduling System (Phase 1 Complete - 40%)
+- [x] Database schema (pilot availability, blackout dates)
+- [x] Conflict detection service
+- [x] API endpoints (availability, blackout, conflicts)
+- [x] Weekly availability management UI
+- [x] Blackout dates management UI
+- [x] Pilot management pages
+- [ ] Calendar view component
+- [ ] Assignment optimizer service
+- [ ] Pilot notifications integration
+- [ ] Pilot self-service dashboard
+- [ ] Schedule optimization algorithms
 
 #### 📊 Dashboard & Analytics
 - [ ] Hub dashboard with KPIs
@@ -400,11 +406,61 @@ Professional drone services management platform with three distinct applications
 - `src/modules/workflow/components/job-card.tsx` - Added Link wrapper
 - `src/modules/workflow/components/kanban-board.tsx` - Made rows/cards clickable
 
+#### Pilot Scheduling System - Phase 1 Foundation (0% → 40%)
+- ✅ **Database Schema** - New tables for availability and blackouts
+  - `Pilot_Availability` - Weekly recurring schedules (day of week, start/end times)
+  - `Pilot_Blackout` - Specific unavailable date ranges (vacation, PTO)
+  - Proper indexes and constraints for performance
+- ✅ **Conflict Detection Service** - Core scheduling logic
+  - Check availability by day of week
+  - Detect blackout period conflicts
+  - Double-booking prevention
+  - Job limit enforcement (max jobs per week/month)
+  - Smart conflict reporting with severity levels
+- ✅ **API Endpoints** - Complete REST API for scheduling
+  - `/api/scheduling/pilots/[id]/availability` - GET/POST/DELETE weekly schedules
+  - `/api/scheduling/pilots/[id]/blackout` - GET/POST/DELETE blackout dates
+  - `/api/scheduling/conflicts` - POST conflict check before scheduling
+  - Bulk availability updates supported
+- ✅ **UI Components** - Admin scheduling management
+  - Pilot Availability Manager - Weekly schedule editor with quick actions
+  - Pilot Blackout Manager - Add/remove unavailable periods
+  - Visual indicators for availability status
+  - Responsive design for mobile/desktop
+- ✅ **Admin Pages** - Complete pilot management interface
+  - `/scheduling/pilots` - List all pilots and staff
+  - `/scheduling/pilots/[id]` - Individual pilot schedule management
+  - Stats dashboard (total pilots, active, staff)
+  - Easy navigation between pilot schedules
+
+**Files Created:**
+- `src/lib/db/schema/pilot-availability.ts` - Database schema (2 tables)
+- `src/modules/scheduling/types.ts` - TypeScript interfaces
+- `src/modules/scheduling/schemas/scheduling-schemas.ts` - Zod validation
+- `src/modules/scheduling/services/conflict-detector.ts` - Conflict detection logic (260+ lines)
+- `src/app/api/scheduling/pilots/[id]/availability/route.ts` - Availability API
+- `src/app/api/scheduling/pilots/[id]/blackout/route.ts` - Blackout API
+- `src/app/api/scheduling/conflicts/route.ts` - Conflict check API
+- `src/modules/scheduling/components/pilot-availability-manager.tsx` - Weekly schedule UI
+- `src/modules/scheduling/components/pilot-blackout-manager.tsx` - Blackout dates UI
+- `src/app/hub/scheduling/pilots/page.tsx` - Pilots list page
+- `src/app/hub/scheduling/pilots/[id]/page.tsx` - Individual pilot schedule page
+
+**Files Modified:**
+- `src/lib/db/schema/index.ts` - Export pilot availability schema
+
+**Next Steps (Phase 2 & 3):**
+- Calendar view component for visual scheduling
+- Assignment optimizer for smart pilot suggestions
+- Email notification integration
+- Pilot self-service dashboard
+- Schedule optimization algorithms
+
 ---
 
 ## 📈 Progress Metrics
 
-### Overall Completion: ~87% (Job Management UI Complete)
+### Overall Completion: ~89% (Pilot Scheduling Foundation Complete)
 
 | Module | Completion | Status |
 |--------|-----------|--------|
@@ -421,12 +477,12 @@ Professional drone services management platform with three distinct applications
 | Audit Logs Viewer | 100% | ✅ Complete |
 | Analytics Dashboard | 90% | 🟢 Near Complete |
 | Job Management | 100% | ✅ Complete |
+| Pilot Scheduling | 40% | 🟡 In Progress |
 | Sites Management | 70% | 🟡 In Progress |
 | Deliverables | 90% | 🟡 In Progress |
 | Notifications | 70% | 🟡 In Progress |
 | UI/UX | 98% | 🟢 Near Complete |
 | Recurring Jobs | 50% | 🟡 In Progress |
-| Pilot Scheduling | 0% | ⭕ Not Started |
 | Billing System | 0% | ⭕ Not Started |
 
 ### Audit Summary (Feb 17, 2026)
