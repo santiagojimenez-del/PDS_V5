@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { jobs, sites, organizations, users } from "@/lib/db/schema";
+import { jobs, sites, organization, users } from "@/lib/db/schema";
 import { eq, count, sql, and, gte } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,8 @@ import {
   IconTrendingUp,
   IconTrendingDown,
   IconClock,
-  IconCheckCircle,
-  IconAlertCircle,
+  IconCircleCheck,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import { PIPELINES } from "@/lib/constants";
 import Link from "next/link";
@@ -40,7 +40,7 @@ async function getDashboardStats() {
   ] = await Promise.all([
     db.select({ value: count() }).from(jobs),
     db.select({ value: count() }).from(sites),
-    db.select({ value: count() }).from(organizations),
+    db.select({ value: count() }).from(organization),
     db.select({ value: count() }).from(users),
     db
       .select({
@@ -263,7 +263,7 @@ export default async function HubHomePage() {
               {
                 key: PIPELINES.BIDS,
                 label: "Bids",
-                icon: IconAlertCircle,
+                icon: IconAlertTriangle,
                 color: "bg-yellow-500",
               },
               {
@@ -287,7 +287,7 @@ export default async function HubHomePage() {
               {
                 key: PIPELINES.COMPLETED,
                 label: "Completed",
-                icon: IconCheckCircle,
+                icon: IconCircleCheck,
                 color: "bg-green-500",
               },
             ].map((stage) => {

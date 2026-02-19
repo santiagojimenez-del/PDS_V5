@@ -1,5 +1,10 @@
 // ── Organization Types ──────────────────────────────────────────────────────
 
+export interface OrgContact {
+  user_id: number;
+  primary: boolean;
+}
+
 export interface Organization {
   id: number;
   name: string;
@@ -11,7 +16,8 @@ export interface Organization {
   city?: string | null;
   state?: string | null;
   zipCode?: string | null;
-  contacts?: number[];
+  contacts?: OrgContact[];
+  archived?: boolean;
 }
 
 export interface OrganizationMeta {

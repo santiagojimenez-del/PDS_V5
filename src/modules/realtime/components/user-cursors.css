@@ -1,0 +1,44 @@
+/**
+ * Styles for user cursor markers on the map
+ */
+
+.user-cursor-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.user-cursor-marker {
+  animation: cursor-fade-in 0.2s ease-out;
+  transition: transform 0.1s ease-out;
+}
+
+.user-cursor-marker:hover {
+  transform: scale(1.2);
+}
+
+@keyframes cursor-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Tooltip styling */
+.user-cursor-tooltip {
+  background: rgba(0, 0, 0, 0.8) !important;
+  border: none !important;
+  color: white !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.user-cursor-tooltip::before {
+  border-right-color: rgba(0, 0, 0, 0.8) !important;
+}

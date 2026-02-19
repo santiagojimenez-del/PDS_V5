@@ -1,10 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   IconDatabase,
   IconServer,
@@ -14,6 +18,8 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconX,
+  IconTool,
+  IconLoader2,
 } from "@tabler/icons-react";
 
 interface HealthCheck {
@@ -39,11 +45,43 @@ async function fetchSystemHealth() {
 }
 
 export default function SystemHealthPage() {
+  const qc = useQueryClient();
+  const [togglingMaintenance, setTogglingMaintenance] = useState(false);
+
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["system-health"],
     queryFn: fetchSystemHealth,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
+
+  const { data: maintenanceData, isLoading: maintenanceLoading } = useQuery({
+    queryKey: ["maintenance-mode"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintenance");
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return json.data as { enabled: boolean };
+    },
+  });
+
+  const handleMaintenanceToggle = async (enabled: boolean) => {
+    setTogglingMaintenance(true);
+    try {
+      const res = await fetch("/api/admin/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || "Failed to update"); return; }
+      toast.success(json.data.message);
+      qc.invalidateQueries({ queryKey: ["maintenance-mode"] });
+    } catch {
+      toast.error("Failed to update maintenance mode");
+    } finally {
+      setTogglingMaintenance(false);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -179,6 +217,56 @@ export default function SystemHealthPage() {
           </Card>
         ))}
       </div>
+
+      {/* Maintenance Mode */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <IconTool className="h-5 w-5 text-primary" />
+            <CardTitle>Maintenance Mode</CardTitle>
+          </div>
+          <CardDescription>
+            When enabled, unauthenticated users see a maintenance page.
+            Logged-in users can still access the application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              {maintenanceLoading ? (
+                <Skeleton className="h-6 w-32" />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Status</span>
+                  {maintenanceData?.enabled ? (
+                    <Badge className="bg-orange-500 hover:bg-orange-600">Maintenance Active</Badge>
+                  ) : (
+                    <Badge variant="secondary">Normal Operation</Badge>
+                  )}
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground">
+                {maintenanceData?.enabled
+                  ? "The site is in maintenance mode. Unauthenticated users are redirected."
+                  : "The site is operating normally. All users can access it."}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              {togglingMaintenance && <IconLoader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              <Label htmlFor="maintenance-switch" className="text-sm">
+                {maintenanceData?.enabled ? "On" : "Off"}
+              </Label>
+              <Switch
+                id="maintenance-switch"
+                checked={maintenanceData?.enabled || false}
+                onCheckedChange={handleMaintenanceToggle}
+                disabled={togglingMaintenance || maintenanceLoading}
+                className={maintenanceData?.enabled ? "data-[state=checked]:bg-orange-500" : ""}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* System Info */}
       <Card>

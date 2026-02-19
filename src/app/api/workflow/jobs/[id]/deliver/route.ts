@@ -7,6 +7,7 @@ import { successResponse, errorResponse, notFoundResponse } from "@/lib/utils/ap
 import { callUpdateJobPipeline } from "@/lib/db/helpers";
 import { deliverJobSchema } from "@/modules/workflow/schemas/job-schemas";
 import { getJobById, updateJobDates } from "@/modules/workflow/services/job-service";
+import { sendDeliveryNotification } from "@/modules/workflow/services/workflow-emails";
 
 export const POST = withAuth(async (_user, req: NextRequest) => {
   const segments = new URL(req.url).pathname.split("/");
@@ -27,6 +28,12 @@ export const POST = withAuth(async (_user, req: NextRequest) => {
     await callUpdateJobPipeline(db, jobId);
 
     const updated = await getJobById(jobId);
+
+    // Fire-and-forget: notify the client by email
+    if (updated) {
+      sendDeliveryNotification(updated, deliveredDate);
+    }
+
     return successResponse(updated);
   } catch (error) {
     console.error("[API] Deliver job error:", error);

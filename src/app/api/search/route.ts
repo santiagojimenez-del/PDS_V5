@@ -7,8 +7,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
-import { jobs, sites, organizations, users } from "@/lib/db/schema";
-import { or, like, eq } from "drizzle-orm";
+import { jobs, sites, organization, users, userMeta } from "@/lib/db/schema";
+import { or, like, eq, and, inArray } from "drizzle-orm";
 
 export const GET = withAuth(async (user, request: NextRequest) => {
   try {
@@ -40,7 +40,7 @@ export const GET = withAuth(async (user, request: NextRequest) => {
           id: job.id,
           title: job.name || `Job #${job.id}`,
           subtitle: `Status: ${job.pipeline}`,
-          url: `/workflow/jobs`, // Could be more specific with job detail page
+          url: `/workflow/jobs`,
         });
       });
     } catch (error) {
@@ -77,11 +77,11 @@ export const GET = withAuth(async (user, request: NextRequest) => {
       try {
         const orgResults = await db
           .select({
-            id: organizations.id,
-            name: organizations.name,
+            id: organization.id,
+            name: organization.name,
           })
-          .from(organizations)
-          .where(like(organizations.name, searchPattern))
+          .from(organization)
+          .where(like(organization.name, searchPattern))
           .limit(5);
 
         orgResults.forEach((org) => {
@@ -98,24 +98,43 @@ export const GET = withAuth(async (user, request: NextRequest) => {
       }
     }
 
-    // Search Users (admin only)
+    // Search Users by email + name from User_Meta (admin only)
     if (user.role === "Admin" || user.role === "Super Admin") {
       try {
         const userResults = await db
-          .select({
-            id: users.id,
-            name: users.name,
-            email: users.email,
-          })
+          .select({ id: users.id, email: users.email })
           .from(users)
-          .where(or(like(users.name, searchPattern), like(users.email, searchPattern)))
+          .where(like(users.email, searchPattern))
           .limit(5);
 
+        // Fetch first_name meta for matched users
+        const userIds = userResults.map((u) => u.id);
+        const nameMeta =
+          userIds.length > 0
+            ? await db
+                .select({ uid: userMeta.uid, metaKey: userMeta.metaKey, metaValue: userMeta.metaValue })
+                .from(userMeta)
+                .where(
+                  and(
+                    inArray(userMeta.uid, userIds),
+                    or(eq(userMeta.metaKey, "first_name"), eq(userMeta.metaKey, "last_name"))
+                  )
+                )
+            : [];
+
+        const nameMap: Record<number, { first?: string; last?: string }> = {};
+        for (const m of nameMeta) {
+          if (!nameMap[m.uid]) nameMap[m.uid] = {};
+          if (m.metaKey === "first_name") nameMap[m.uid].first = m.metaValue || "";
+          if (m.metaKey === "last_name") nameMap[m.uid].last = m.metaValue || "";
+        }
+
         userResults.forEach((u) => {
+          const fullName = [nameMap[u.id]?.first, nameMap[u.id]?.last].filter(Boolean).join(" ");
           results.push({
             type: "user",
             id: u.id,
-            title: u.name || u.email,
+            title: fullName || u.email,
             subtitle: u.email,
             url: `/admin/users/${u.id}`,
           });

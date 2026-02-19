@@ -10,6 +10,7 @@ import { useMapInstance } from "../../hooks/use-map-instance";
 import { useDrawingTools } from "../../hooks/use-drawing-tools";
 import { useViewerData, useViewerTileset, useUpdateDeliverable } from "../../hooks/use-viewer-data";
 import { parseDeliverableJSON, stringifyDeliverableJSON } from "../../services/deliverables-client";
+import { useViewerSocket } from "../../hooks/use-viewer-socket";
 import type { ClassificationItem, SavedView, ViewerFeatureCollection } from "../../types";
 
 interface LandscapeViewerProps {
@@ -20,6 +21,7 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
   const { data, isLoading, error } = useViewerData(jobProductId);
   const { data: tileset } = useViewerTileset(jobProductId);
   const updateDeliverable = useUpdateDeliverable(jobProductId);
+  const { isConnected, activeUsers, ls } = useViewerSocket({ jobProductId });
 
   // Helper to normalize coordinates (handle both array and object formats)
   const normalizeCoordinates = (coords: any): [number, number] => {
@@ -107,7 +109,12 @@ export function LandscapeViewer({ jobProductId }: LandscapeViewerProps) {
         value: stringifyDeliverableJSON(showTileset),
       }),
     ]);
-  }, [features, classifications, savedViews, showTileset, updateDeliverable]);
+    // Broadcast full state to collaborators via socket
+    ls.updateAreas(features);
+    ls.updateClasses(classifications);
+    ls.updateViews(savedViews);
+    ls.updateLayers(showTileset);
+  }, [features, classifications, savedViews, showTileset, updateDeliverable, ls]);
 
   const handleAddClassification = (item: ClassificationItem) => {
     setClassifications((prev) => [...prev, item]);

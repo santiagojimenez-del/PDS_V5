@@ -7,13 +7,14 @@ import { Toolbar } from "../shared/toolbar";
 import { ClassificationSidebar } from "../shared/classification-sidebar";
 import { ControlPanel } from "../shared/control-panel";
 import { CompliancePanel } from "./compliance-panel";
-import { PropertyOverlay } from "./property-overlay";
+import { FeaturePropertiesPanel } from "../shared/feature-properties-panel";
 import { useMapInstance } from "../../hooks/use-map-instance";
 import { useDrawingTools } from "../../hooks/use-drawing-tools";
 import { useViewerData, useViewerTileset, useUpdateDeliverable } from "../../hooks/use-viewer-data";
 import { parseDeliverableJSON, stringifyDeliverableJSON } from "../../services/deliverables-client";
 import type { ClassificationItem, SavedView, ViewerFeatureCollection } from "../../types";
 import type { ComplianceEntry } from "../../types/community";
+import type { FeatureProperties } from "../shared/feature-properties-panel";
 
 interface CommunityViewerProps {
   jobProductId: string;
@@ -50,6 +51,7 @@ export function CommunityViewer({ jobProductId }: CommunityViewerProps) {
     selectedFeatureId,
     setSelectedFeatureId,
     addFeature,
+    updateFeature,
     deleteFeature,
     replaceFeatures,
   } = useDrawingTools();
@@ -57,9 +59,9 @@ export function CommunityViewer({ jobProductId }: CommunityViewerProps) {
   const [classifications, setClassifications] = useState<ClassificationItem[]>([]);
   const [selectedClassificationId, setSelectedClassificationId] = useState<string | null>(null);
   const [complianceReports, setComplianceReports] = useState<ComplianceEntry[]>([]);
-  const [propertyOverlayEnabled, setPropertyOverlayEnabled] = useState(false);
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [showTileset, setShowTileset] = useState(true);
+  const [showFeatureProps, setShowFeatureProps] = useState(false);
 
   // Load deliverables into state
   useEffect(() => {
@@ -120,6 +122,29 @@ export function CommunityViewer({ jobProductId }: CommunityViewerProps) {
       }),
     ]);
   }, [features, classifications, complianceReports, savedViews, showTileset, updateDeliverable]);
+
+  const handleFeatureUpdate = (id: string, props: FeatureProperties) => {
+    const existing = features.features.find((f) => f.id === id);
+    updateFeature(id, {
+      properties: { ...(existing?.properties ?? {}), ...props },
+    });
+    // Also sync compliance report if complianceStatus is set on the feature
+    if (props.complianceStatus && props.name) {
+      setComplianceReports((prev) => {
+        const idx = prev.findIndex((r) => r.parcelId === props.name);
+        const entry: ComplianceEntry = {
+          parcelId: props.name!,
+          status: props.complianceStatus as ComplianceEntry["status"],
+          notes: props.notes,
+        };
+        if (idx >= 0) {
+          return prev.map((r, i) => (i === idx ? entry : r));
+        }
+        return [...prev, entry];
+      });
+    }
+    setShowFeatureProps(false);
+  };
 
   const handleSaveView = (view: SavedView) => {
     setSavedViews((prev) => [...prev, view]);
@@ -190,7 +215,10 @@ export function CommunityViewer({ jobProductId }: CommunityViewerProps) {
           }
           addFeature(f);
         }}
-        onFeatureSelected={setSelectedFeatureId}
+        onFeatureSelected={(id) => {
+          setSelectedFeatureId(id);
+          setShowFeatureProps(!!id);
+        }}
         onDrawingStop={() => setIsDrawing(false)}
         tileUrl={showTileset ? tileUrl : undefined}
       />
@@ -216,12 +244,20 @@ export function CommunityViewer({ jobProductId }: CommunityViewerProps) {
         onToggleTileset={() => setShowTileset(!showTileset)}
       />
 
-      <CompliancePanel reports={complianceReports} />
-
-      <PropertyOverlay
-        enabled={propertyOverlayEnabled}
-        onToggle={setPropertyOverlayEnabled}
+      <CompliancePanel
+        reports={complianceReports}
+        onChange={setComplianceReports}
       />
+
+      {showFeatureProps && (
+        <FeaturePropertiesPanel
+          feature={features.features.find((f) => f.id === selectedFeatureId) ?? null}
+          classifications={classifications}
+          showCompliance
+          onUpdate={handleFeatureUpdate}
+          onClose={() => setShowFeatureProps(false)}
+        />
+      )}
     </ViewerContainer>
   );
 }

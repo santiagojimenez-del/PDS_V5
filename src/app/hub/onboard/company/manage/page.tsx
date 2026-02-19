@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IconBuilding, IconSearch, IconBriefcase, IconUsers } from "@tabler/icons-react";
+import { IconBuilding, IconSearch, IconBriefcase, IconUsers, IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
+import Link from "next/link";
 
 interface OrgData {
   id: number;
@@ -61,29 +62,32 @@ export default function ManageCompanyPage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((org) => (
-            <Card key={org.id} className="cursor-pointer transition-shadow hover:shadow-md">
-              <CardContent className="p-4">
-                <div className="mb-2 flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    <IconBuilding className="h-4 w-4 text-primary" />
-                    <h3 className="font-semibold text-sm">{org.name}</h3>
+            <Link key={org.id} href={`/hub/onboard/company/manage/${org.id}`}>
+              <Card className="cursor-pointer transition-shadow hover:shadow-md hover:border-primary/40">
+                <CardContent className="p-4">
+                  <div className="mb-2 flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <IconBuilding className="h-4 w-4 text-primary" />
+                      <h3 className="font-semibold text-sm">{org.name}</h3>
+                    </div>
+                    <IconChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
-                </div>
-                {org.address && (
-                  <p className="mb-2 text-xs text-muted-foreground line-clamp-2">{org.address}</p>
-                )}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <Badge variant="outline" className="text-xs">
-                    <IconBriefcase className="mr-1 h-3 w-3" />
-                    {org.jobCount} jobs
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    <IconUsers className="mr-1 h-3 w-3" />
-                    {org.contactCount} contacts
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                  {org.address && (
+                    <p className="mb-2 text-xs text-muted-foreground line-clamp-2">{org.address}</p>
+                  )}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <Badge variant="outline" className="text-xs">
+                      <IconBriefcase className="mr-1 h-3 w-3" />
+                      {org.jobCount} jobs
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      <IconUsers className="mr-1 h-3 w-3" />
+                      {org.contactCount} contacts
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
           {filtered.length === 0 && (
             <p className="col-span-full py-8 text-center text-muted-foreground">No companies found.</p>

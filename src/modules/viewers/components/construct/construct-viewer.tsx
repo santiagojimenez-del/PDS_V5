@@ -6,11 +6,13 @@ import { MapDisplay } from "../shared/map-display";
 import { Toolbar } from "../shared/toolbar";
 import { ClassificationSidebar } from "../shared/classification-sidebar";
 import { ControlPanel } from "../shared/control-panel";
+import { FeaturePropertiesPanel } from "../shared/feature-properties-panel";
 import { useMapInstance } from "../../hooks/use-map-instance";
 import { useDrawingTools } from "../../hooks/use-drawing-tools";
 import { useViewerData, useViewerTileset, useUpdateDeliverable } from "../../hooks/use-viewer-data";
 import { parseDeliverableJSON, stringifyDeliverableJSON } from "../../services/deliverables-client";
 import type { ClassificationItem, SavedView, ViewerFeatureCollection } from "../../types";
+import type { FeatureProperties } from "../shared/feature-properties-panel";
 
 interface ConstructViewerProps {
   jobProductId: string;
@@ -47,6 +49,7 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
     selectedFeatureId,
     setSelectedFeatureId,
     addFeature,
+    updateFeature,
     deleteFeature,
     replaceFeatures,
   } = useDrawingTools();
@@ -55,6 +58,7 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
   const [selectedClassificationId, setSelectedClassificationId] = useState<string | null>(null);
   const [savedViews, setSavedViews] = useState<SavedView[]>([]);
   const [showTileset, setShowTileset] = useState(true);
+  const [showFeatureProps, setShowFeatureProps] = useState(false);
 
   // Load deliverables into state
   useEffect(() => {
@@ -108,6 +112,14 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
       }),
     ]);
   }, [features, classifications, savedViews, showTileset, updateDeliverable]);
+
+  const handleFeatureUpdate = (id: string, props: FeatureProperties) => {
+    const existing = features.features.find((f) => f.id === id);
+    updateFeature(id, {
+      properties: { ...(existing?.properties ?? {}), ...props },
+    });
+    setShowFeatureProps(false);
+  };
 
   const handleSaveView = (view: SavedView) => {
     setSavedViews((prev) => [...prev, view]);
@@ -178,7 +190,10 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
           }
           addFeature(f);
         }}
-        onFeatureSelected={setSelectedFeatureId}
+        onFeatureSelected={(id) => {
+          setSelectedFeatureId(id);
+          setShowFeatureProps(!!id);
+        }}
         onDrawingStop={() => setIsDrawing(false)}
         tileUrl={showTileset ? tileUrl : undefined}
       />
@@ -203,6 +218,16 @@ export function ConstructViewer({ jobProductId }: ConstructViewerProps) {
         showTileset={showTileset}
         onToggleTileset={() => setShowTileset(!showTileset)}
       />
+
+      {showFeatureProps && (
+        <FeaturePropertiesPanel
+          feature={features.features.find((f) => f.id === selectedFeatureId) ?? null}
+          classifications={classifications}
+          showCompliance={false}
+          onUpdate={handleFeatureUpdate}
+          onClose={() => setShowFeatureProps(false)}
+        />
+      )}
     </ViewerContainer>
   );
 }

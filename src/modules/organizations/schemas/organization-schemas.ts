@@ -10,7 +10,6 @@ export const createOrganizationSchema = z.object({
   state: z.string().max(2, "State should be 2-letter code").optional(),
   zipCode: z.string().max(10, "Zip code too long").optional(),
   logo: z.string().url("Invalid logo URL").optional().or(z.literal("")),
-  contacts: z.array(z.number().int().positive()).optional(),
 });
 
 // ── Update Organization Schema ──────────────────────────────────────────────
@@ -23,7 +22,6 @@ export const updateOrganizationSchema = z.object({
   state: z.string().max(2, "State should be 2-letter code").optional(),
   zipCode: z.string().max(10, "Zip code too long").optional(),
   logo: z.string().url("Invalid logo URL").optional().or(z.literal("")),
-  contacts: z.array(z.number().int().positive()).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: "At least one field must be provided for update",
 });

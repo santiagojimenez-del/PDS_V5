@@ -2,19 +2,46 @@
 
 import { useState } from "react";
 import { useCurrentUser } from "@/modules/permissions/hooks/use-permissions";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { IconSun, IconUser, IconLock, IconBell } from "@tabler/icons-react";
+import {
+  IconSun, IconUser, IconLock, IconBell,
+  IconShieldCheck, IconShieldOff, IconLoader2,
+} from "@tabler/icons-react";
 
 export default function SettingsPage() {
   const { data: userData, isLoading } = useCurrentUser();
+  const qc = useQueryClient();
   const user = userData?.data?.user;
+
+  const [toggling2FA, setToggling2FA] = useState(false);
+
+  const handle2FAToggle = async (enable: boolean) => {
+    setToggling2FA(true);
+    try {
+      const res = await fetch("/api/users/me/2fa", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: enable ? "enable" : "disable" }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || "Failed to update 2FA"); return; }
+      toast.success(json.data.message);
+      qc.invalidateQueries({ queryKey: ["currentUser"] });
+    } catch {
+      toast.error("Failed to update 2FA settings");
+    } finally {
+      setToggling2FA(false);
+    }
+  };
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -38,11 +65,25 @@ export default function SettingsPage() {
 
     setSavingPassword(true);
     try {
-      // TODO: Implement password change API endpoint
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        toast.error(json.error || "Failed to update password");
+        return;
+      }
+
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error) {
+    } catch {
       toast.error("Failed to update password");
     } finally {
       setSavingPassword(false);
@@ -171,6 +212,66 @@ export default function SettingsPage() {
               {savingPassword ? "Updating..." : "Update Password"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Two-Factor Authentication */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <IconShieldCheck className="h-5 w-5 text-primary" />
+            <CardTitle>Two-Factor Authentication</CardTitle>
+          </div>
+          <CardDescription>
+            Adds an extra layer of security by requiring an email code at each login.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Email 2FA</span>
+                {user?.twoFactorRequired ? (
+                  <Badge className="gap-1 bg-green-500 hover:bg-green-600">
+                    <IconShieldCheck className="h-3 w-3" /> Enabled
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <IconShieldOff className="h-3 w-3" /> Disabled
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {user?.twoFactorRequired
+                  ? "A verification code will be sent to your email on each login."
+                  : "Enable to receive a code by email each time you log in."}
+              </p>
+            </div>
+            {user?.twoFactorRequired ? (
+              <Button
+                variant="outline"
+                className="shrink-0 gap-2 text-destructive border-destructive hover:bg-destructive/10"
+                onClick={() => handle2FAToggle(false)}
+                disabled={toggling2FA}
+              >
+                {toggling2FA
+                  ? <IconLoader2 className="h-4 w-4 animate-spin" />
+                  : <IconShieldOff className="h-4 w-4" />}
+                Disable 2FA
+              </Button>
+            ) : (
+              <Button
+                className="shrink-0 gap-2"
+                onClick={() => handle2FAToggle(true)}
+                disabled={toggling2FA}
+              >
+                {toggling2FA
+                  ? <IconLoader2 className="h-4 w-4 animate-spin" />
+                  : <IconShieldCheck className="h-4 w-4" />}
+                Enable 2FA
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
