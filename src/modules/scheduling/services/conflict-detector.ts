@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { pilotAvailability, pilotBlackout, jobs, jobMeta } from "@/lib/db/schema";
-import { eq, and, lte, gte, sql } from "drizzle-orm";
+import { eq, and, lte, gte, sql, count } from "drizzle-orm";
 import { getMetaValue } from "@/lib/db/helpers";
 import type { ConflictReport, ConflictType } from "../types";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, getDay, format } from "date-fns";
@@ -17,26 +17,39 @@ export async function detectScheduleConflicts(
   const date = parseISO(scheduledDate);
   const dayOfWeek = getDay(date); // 0 = Sunday, 6 = Saturday
 
-  // 1. Check if pilot has availability for this day of week
-  const availability = await db
-    .select()
+  // 1. Check if pilot has availability for this day of week.
+  //    If the pilot has NO records at all, they haven't configured their schedule yet
+  //    → treat as available (opt-in model: restrict only what's explicitly blocked).
+  //    If the pilot HAS records but not for this day → they marked it as unavailable.
+  const [{ total: totalRecords }] = await db
+    .select({ total: count() })
     .from(pilotAvailability)
-    .where(
-      and(
-        eq(pilotAvailability.pilotId, pilotId),
-        eq(pilotAvailability.dayOfWeek, dayOfWeek)
-      )
-    )
-    .limit(1);
+    .where(eq(pilotAvailability.pilotId, pilotId));
 
-  if (availability.length === 0 || !availability[0].isAvailable) {
-    conflicts.push({
-      type: "unavailable",
-      severity: "error",
-      message: `Pilot is not available on ${format(date, "EEEE")}s`,
-      details: { dayOfWeek, hasAvailability: availability.length > 0 },
-    });
+  const hasConfiguredSchedule = (totalRecords ?? 0) > 0;
+
+  if (hasConfiguredSchedule) {
+    const availability = await db
+      .select()
+      .from(pilotAvailability)
+      .where(
+        and(
+          eq(pilotAvailability.pilotId, pilotId),
+          eq(pilotAvailability.dayOfWeek, dayOfWeek)
+        )
+      )
+      .limit(1);
+
+    if (availability.length === 0 || !availability[0].isAvailable) {
+      conflicts.push({
+        type: "unavailable",
+        severity: "error",
+        message: `Pilot is not available on ${format(date, "EEEE")}s`,
+        details: { dayOfWeek, hasAvailability: availability.length > 0 },
+      });
+    }
   }
+  // else: no records → pilot hasn't set a schedule yet → no availability conflict
 
   // 2. Check for blackout dates
   const blackouts = await db

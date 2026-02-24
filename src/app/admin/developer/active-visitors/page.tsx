@@ -18,8 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   IconNetwork, IconUser, IconClock, IconRefresh,
-  IconPlugConnected, IconPlugConnectedX, IconDoor,
+  IconPlugConnected, IconPlugConnectedX, IconDoor, IconLogout, IconLoader2,
 } from "@tabler/icons-react";
+import { toast } from "sonner";
 import { getSocket } from "@/lib/socket/client";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ export default function ActiveVisitorsPage() {
   const [socketConns,   setSocketConns]   = useState<SocketConnection[]>([]);
   const [socketStatus,  setSocketStatus]  = useState<"connecting" | "live" | "error">("connecting");
   const [tick,          setTick]          = useState(0); // forces re-render for elapsed times
+  const [killing,       setKilling]       = useState<number | null>(null);
 
   // HTTP sessions (fallback / extra info)
   const { data: httpData, isLoading: httpLoading, refetch: refetchHttp } = useQuery({
@@ -118,6 +120,25 @@ export default function ActiveVisitorsPage() {
     socket.emit("admin:developer:connections");
     refetchHttp();
   }, [refetchHttp]);
+
+  const handleKillSessions = async (userId: number, email: string) => {
+    setKilling(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "kill-sessions" }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || "Failed to kill sessions"); return; }
+      toast.success(`Sessions terminated for ${email}`);
+      refetchHttp();
+    } catch {
+      toast.error("Failed to kill sessions");
+    } finally {
+      setKilling(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -261,6 +282,18 @@ export default function ActiveVisitorsPage() {
                       <IconClock className="mr-1 h-3 w-3" />
                       {s.sessionCount} session{s.sessionCount !== 1 ? "s" : ""}
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      disabled={killing === s.userId}
+                      onClick={() => handleKillSessions(s.userId, s.email)}
+                      title="Kill all sessions"
+                    >
+                      {killing === s.userId
+                        ? <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <IconLogout className="h-3.5 w-3.5" />}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

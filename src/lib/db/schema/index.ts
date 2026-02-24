@@ -16,3 +16,4 @@ export * from "./upload";
 export * from "./email-log";
 export * from "./pilot-availability";
 export * from "./invoices";
+export * from "./notifications";

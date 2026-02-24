@@ -35,6 +35,12 @@ interface SystemHealth {
   checks: HealthCheck[];
   uptime: number;
   timestamp: string;
+  sysInfo?: {
+    nodeVersion: string;
+    nextVersion: string;
+    appVersion:  string;
+    environment: string;
+  };
 }
 
 async function fetchSystemHealth() {
@@ -275,20 +281,30 @@ export default function SystemHealthPage() {
           <CardDescription>Environment and runtime details</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Environment</p>
-              <p className="text-lg font-semibold">
-                {process.env.NODE_ENV === "production" ? "Production" : "Development"}
+              <p className="text-lg font-semibold capitalize">
+                {data?.sysInfo?.environment ?? "—"}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Node Version</p>
-              <p className="text-lg font-semibold">{process.version || "Unknown"}</p>
+              <p className="text-sm font-medium text-muted-foreground">Node.js</p>
+              <p className="text-lg font-semibold">
+                {data?.sysInfo?.nodeVersion ?? "—"}
+              </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Next.js Version</p>
-              <p className="text-lg font-semibold">16.x</p>
+              <p className="text-sm font-medium text-muted-foreground">Next.js</p>
+              <p className="text-lg font-semibold">
+                {data?.sysInfo?.nextVersion ?? "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">App Version</p>
+              <p className="text-lg font-semibold">
+                v{data?.sysInfo?.appVersion ?? "—"}
+              </p>
             </div>
           </div>
         </CardContent>

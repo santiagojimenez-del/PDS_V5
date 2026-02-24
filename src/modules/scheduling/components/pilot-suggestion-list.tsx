@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IconStar, IconAlertCircle, IconCheck, IconX } from "@tabler/icons-react";
 import type { PilotSuggestion } from "../types";
 
@@ -52,12 +51,10 @@ export function PilotSuggestionList({
 
   if (!scheduledDate) {
     return (
-      <Alert>
-        <IconAlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Select a date to see pilot availability and suggestions
-        </AlertDescription>
-      </Alert>
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+        <IconAlertCircle className="h-4 w-4 shrink-0" />
+        Select a date to see pilot availability and suggestions
+      </div>
     );
   }
 
@@ -73,12 +70,10 @@ export function PilotSuggestionList({
 
   if (suggestions.length === 0) {
     return (
-      <Alert>
-        <IconAlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          No pilots available for this date. All pilots may be busy or unavailable.
-        </AlertDescription>
-      </Alert>
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+        <IconAlertCircle className="h-4 w-4 shrink-0" />
+        No pilots available for this date. All pilots may be busy or unavailable.
+      </div>
     );
   }
 

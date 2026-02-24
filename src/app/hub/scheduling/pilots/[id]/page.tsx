@@ -9,19 +9,18 @@ import Link from "next/link";
 import { PilotAvailabilityManager } from "@/modules/scheduling/components/pilot-availability-manager";
 import { PilotBlackoutManager } from "@/modules/scheduling/components/pilot-blackout-manager";
 
-interface User {
+interface PilotUser {
   id: number;
-  name: string;
+  fullName: string;
   email: string;
-  role: string;
+  roles: number[];
 }
 
 async function fetchUser(id: string) {
-  const res = await fetch(`/api/admin/users`);
-  if (!res.ok) throw new Error("Failed to fetch users");
+  const res = await fetch(`/api/admin/users/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch user");
   const json = await res.json();
-  const users = json.data.users as User[];
-  return users.find((u) => u.id === parseInt(id, 10));
+  return json.data as PilotUser;
 }
 
 export default function PilotSchedulingPage() {
@@ -73,9 +72,9 @@ export default function PilotSchedulingPage() {
               </Button>
             </Link>
             <div>
-              <h2 className="text-2xl font-bold">Pilot Schedule - {pilot.name}</h2>
+              <h2 className="text-2xl font-bold">Pilot Schedule - {pilot.fullName || pilot.email}</h2>
               <p className="text-sm text-muted-foreground">
-                {pilot.email} • {pilot.role}
+                {pilot.email}
               </p>
             </div>
           </div>
@@ -83,10 +82,10 @@ export default function PilotSchedulingPage() {
       </div>
 
       {/* Availability Manager */}
-      <PilotAvailabilityManager pilotId={pilot.id} pilotName={pilot.name} />
+      <PilotAvailabilityManager pilotId={pilot.id} pilotName={pilot.fullName || pilot.email} />
 
       {/* Blackout Manager */}
-      <PilotBlackoutManager pilotId={pilot.id} pilotName={pilot.name} />
+      <PilotBlackoutManager pilotId={pilot.id} pilotName={pilot.fullName || pilot.email} />
     </div>
   );
 }

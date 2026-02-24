@@ -4,6 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { detectScheduleConflicts, getPilotAssignments } from "./conflict-detector";
 import type { PilotSuggestion } from "../types";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { ROLES } from "@/lib/constants";
 
 /**
  * Suggest optimal pilots for a job based on multiple factors
@@ -14,10 +15,10 @@ export async function suggestOptimalPilots(
   durationHours: number = 4
 ): Promise<PilotSuggestion[]> {
   // 1. Get all pilots and staff
+  // users table only has id, email - names are in User_Meta
   const allUsers = await db
     .select({
       id: users.id,
-      name: users.name,
       email: users.email,
     })
     .from(users);
@@ -33,11 +34,11 @@ export async function suggestOptimalPilots(
     .from(userMeta)
     .where(inArray(userMeta.uid, allUserIds));
 
-  // Build user map with roles
-  const userMap = new Map<number, { name: string; email: string; roles: string[] }>();
+  // Build user map with roles (stored as number[] in DB) and names from User_Meta
+  const userMap = new Map<number, { name: string; email: string; roles: number[] }>();
 
   for (const user of allUsers) {
-    const roles: string[] = [];
+    const roles: number[] = [];
     const roleMeta = metaData.find(
       (m) => m.uid === user.id && m.metaKey === "roles"
     );
@@ -46,23 +47,33 @@ export async function suggestOptimalPilots(
       try {
         const parsed = JSON.parse(roleMeta.metaValue);
         if (Array.isArray(parsed)) {
-          roles.push(...parsed);
+          // Roles are stored as numbers (6=Pilot, 5=Staff, etc.)
+          roles.push(...parsed.map(Number).filter((n) => !isNaN(n)));
         }
       } catch {
         // Invalid JSON, skip
       }
     }
 
+    // Build full name from first_name + last_name meta
+    const firstNameMeta = metaData.find((m) => m.uid === user.id && m.metaKey === "first_name");
+    const lastNameMeta  = metaData.find((m) => m.uid === user.id && m.metaKey === "last_name");
+    const name = [firstNameMeta?.metaValue, lastNameMeta?.metaValue]
+      .filter(Boolean)
+      .join(" ") || user.email;
+
     userMap.set(user.id, {
-      name: user.name || user.email,
+      name,
       email: user.email,
       roles,
     });
   }
 
-  // Filter for pilots and staff only
+  // Filter for pilots (6) and staff (5) using numeric role IDs
   const pilots = Array.from(userMap.entries())
-    .filter(([_, data]) => data.roles.includes("Pilot") || data.roles.includes("Staff"))
+    .filter(([_, data]) =>
+      data.roles.includes(ROLES.PILOT) || data.roles.includes(ROLES.STAFF)
+    )
     .map(([id, data]) => ({ id, ...data }));
 
   if (pilots.length === 0) {

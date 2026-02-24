@@ -9,11 +9,24 @@ import { IconCalendar, IconUser, IconChevronRight, IconClock } from "@tabler/ico
 import Link from "next/link";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 
+// ROLES: 0=Admin, 5=Staff, 6=Pilot, 7=Manager
+const ROLE_PILOT = 6;
+const ROLE_STAFF = 5;
+
 interface User {
   id: number;
-  name: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
   email: string;
-  role: string;
+  roles: number[];
+}
+
+interface SchedulingStats {
+  jobsThisWeek: number;
+  activePilotAssignments: number;
+  weekStart: string;
+  weekEnd: string;
 }
 
 async function fetchPilots() {
@@ -21,13 +34,26 @@ async function fetchPilots() {
   if (!res.ok) throw new Error("Failed to fetch users");
   const json = await res.json();
   const users = json.data.users as User[];
-  return users.filter((u) => u.role === "Pilot" || u.role === "Staff");
+  return users.filter((u) => u.roles.includes(ROLE_PILOT) || u.roles.includes(ROLE_STAFF));
+}
+
+async function fetchStats(): Promise<SchedulingStats> {
+  const res = await fetch("/api/scheduling/stats");
+  if (!res.ok) throw new Error("Failed to fetch stats");
+  const json = await res.json();
+  return json.data;
 }
 
 export default function SchedulingDashboardPage() {
   const { data: pilots, isLoading } = useQuery({
     queryKey: ["pilots"],
     queryFn: fetchPilots,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["scheduling-stats"],
+    queryFn: fetchStats,
+    refetchInterval: 60_000, // refresh every minute
   });
 
   const weekStart = startOfWeek(new Date());
@@ -46,8 +72,8 @@ export default function SchedulingDashboardPage() {
     );
   }
 
-  const pilotCount = pilots?.filter((p) => p.role === "Pilot").length || 0;
-  const staffCount = pilots?.filter((p) => p.role === "Staff").length || 0;
+  const pilotCount = pilots?.filter((p) => p.roles.includes(ROLE_PILOT)).length || 0;
+  const staffCount = pilots?.filter((p) => p.roles.includes(ROLE_STAFF)).length || 0;
 
   return (
     <div className="space-y-6">
@@ -106,7 +132,9 @@ export default function SchedulingDashboardPage() {
                 <IconCalendar className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">-</p>
+                <p className="text-2xl font-bold">
+                  {stats ? stats.jobsThisWeek : "-"}
+                </p>
                 <p className="text-sm text-muted-foreground">Jobs This Week</p>
               </div>
             </div>
@@ -120,8 +148,10 @@ export default function SchedulingDashboardPage() {
                 <IconClock className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">-</p>
-                <p className="text-sm text-muted-foreground">Avg Hours/Pilot</p>
+                <p className="text-2xl font-bold">
+                  {stats ? stats.activePilotAssignments : "-"}
+                </p>
+                <p className="text-sm text-muted-foreground">Active Assignments</p>
               </div>
             </div>
           </CardContent>
@@ -198,13 +228,13 @@ export default function SchedulingDashboardPage() {
                         <IconUser className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">{pilot.name}</p>
+                        <p className="font-medium">{pilot.fullName || pilot.email}</p>
                         <p className="text-xs text-muted-foreground">{pilot.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={pilot.role === "Pilot" ? "default" : "secondary"}>
-                        {pilot.role}
+                      <Badge variant={pilot.roles.includes(ROLE_PILOT) ? "default" : "secondary"}>
+                        {pilot.roles.includes(ROLE_PILOT) ? "Pilot" : "Staff"}
                       </Badge>
                       <IconChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>

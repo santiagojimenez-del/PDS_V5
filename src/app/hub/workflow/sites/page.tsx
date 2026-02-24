@@ -27,6 +27,7 @@ import {
   IconDownload,
 } from "@tabler/icons-react";
 import { useState, useMemo, lazy, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { useCurrentUser, useHasPermission } from "@/modules/permissions/hooks/use-permissions";
 
 const SitesMap = lazy(() =>
@@ -54,6 +55,7 @@ async function fetchSites() {
 const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 export default function SitesPage() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "map">("list");
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
@@ -262,7 +264,7 @@ export default function SitesPage() {
                   <Card
                     key={site.id}
                     className="cursor-pointer transition-shadow hover:shadow-md"
-                    onClick={() => { setSelectedSiteId(site.id); setView("map"); }}
+                    onClick={() => router.push(`/workflow/sites/${site.id}`)}
                   >
                     <CardContent className="p-4">
                       <div className="mb-2 flex items-start justify-between">

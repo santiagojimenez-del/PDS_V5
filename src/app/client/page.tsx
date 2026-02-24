@@ -12,7 +12,7 @@ import {
   IconCalendar,
   IconDownload,
   IconTrendingUp,
-  IconCheckCircle,
+  IconCircleCheck,
   IconClock,
 } from "@tabler/icons-react";
 import Link from "next/link";
@@ -122,7 +122,7 @@ export default function ClientHomePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <IconCheckCircle className="h-4 w-4 text-green-600" />
+            <IconCircleCheck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{completed}</div>
@@ -256,7 +256,7 @@ export default function ClientHomePage() {
                       </div>
                     </div>
                     {j.dateCompleted && (
-                      <IconCheckCircle className="h-5 w-5 text-green-600" />
+                      <IconCircleCheck className="h-5 w-5 text-green-600" />
                     )}
                   </CardContent>
                 </Card>

@@ -26,13 +26,36 @@ export async function generateOccurrences(
 
   const template = templates[0];
 
-  // Check if template has RRULE or is manual
-  if (!template.rrule || template.isManual === 1) {
+  // Manual template: create a single occurrence on demand (no RRULE needed)
+  if (template.isManual === 1) {
+    const occurrenceDate = fromDate || new Date();
+
+    const insertResult = await db
+      .insert(recurringJobOccurrences)
+      .values({
+        templateId,
+        occurrenceAt: occurrenceDate,
+        status: "planned",
+        jobId: null,
+      })
+      .$returningId();
+
+    const created = await db
+      .select()
+      .from(recurringJobOccurrences)
+      .where(eq(recurringJobOccurrences.id, insertResult[0].id))
+      .limit(1);
+
     return {
-      generated: 0,
+      generated: created.length,
       skipped: 0,
-      occurrences: [],
+      occurrences: created as RecurringJobOccurrence[],
     };
+  }
+
+  // Template without RRULE (guard for non-manual edge case)
+  if (!template.rrule) {
+    return { generated: 0, skipped: 0, occurrences: [] };
   }
 
   // Calculate date range

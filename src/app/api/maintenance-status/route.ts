@@ -11,7 +11,7 @@ import { getConfigValue } from "@/modules/config/services/config-loader";
 export async function GET() {
   try {
     const val = await getConfigValue("", "maintenance_mode");
-    const maintenance = val === "1" || val === "true" || val === true;
+    const maintenance = val === "1" || val === "true";
     return NextResponse.json({ maintenance });
   } catch {
     // If DB is down, don't lock everyone out

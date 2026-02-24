@@ -73,7 +73,7 @@ export const GET = withAuth(async (user, request: NextRequest) => {
     }
 
     // Search Organizations (admin only)
-    if (user.role === "Admin" || user.role === "Super Admin") {
+    if (user.roles.includes(0)) {
       try {
         const orgResults = await db
           .select({
@@ -99,7 +99,7 @@ export const GET = withAuth(async (user, request: NextRequest) => {
     }
 
     // Search Users by email + name from User_Meta (admin only)
-    if (user.role === "Admin" || user.role === "Super Admin") {
+    if (user.roles.includes(0)) {
       try {
         const userResults = await db
           .select({ id: users.id, email: users.email })

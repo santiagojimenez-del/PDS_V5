@@ -3,6 +3,7 @@ import {
   int,
   varchar,
   json,
+  timestamp,
 } from "drizzle-orm/mysql-core";
 
 // ── Logs ─────────────────────────────────────────────────────────────────────
@@ -14,4 +15,5 @@ export const logs = mysqlTable("Logs", {
   action: varchar("action", { length: 50 }).notNull(),
   affectedTable: varchar("affected_table", { length: 255 }).notNull(),
   columns: json("columns"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

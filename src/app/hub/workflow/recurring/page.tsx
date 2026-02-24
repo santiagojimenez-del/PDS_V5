@@ -555,8 +555,12 @@ export default function RecurringJobsPage() {
       });
       const json = await res.json();
       if (!res.ok) { toast.error(json.error || "Failed to generate"); return; }
-      const count = json.data?.occurrences?.length || 0;
-      toast.success(`Generated ${count} occurrence(s) for "${t.name}"`);
+      const generated: number = json.data?.generated ?? 0;
+      if (generated === 0) {
+        toast.info(`No new occurrences to generate for "${t.name}"`);
+      } else {
+        toast.success(`Generated ${generated} occurrence(s) for "${t.name}"`);
+      }
     } catch {
       toast.error("Failed to generate occurrences");
     } finally {

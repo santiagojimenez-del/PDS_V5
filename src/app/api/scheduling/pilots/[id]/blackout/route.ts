@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
 import { pilotBlackout } from "@/lib/db/schema";
-import { eq, gte } from "drizzle-orm";
+import { eq, gte, and } from "drizzle-orm";
 import { successResponse, errorResponse, notFoundResponse } from "@/lib/utils/api";
 import { blackoutSchema } from "@/modules/scheduling/schemas/scheduling-schemas";
 
@@ -26,17 +26,16 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
   const futureOnly = searchParams.get("future") === "true";
 
   try {
-    let query = db
+    const now = new Date();
+    const condition = futureOnly
+      ? and(eq(pilotBlackout.pilotId, pilotId), gte(pilotBlackout.endDate, now))
+      : eq(pilotBlackout.pilotId, pilotId);
+
+    const blackouts = await db
       .select()
       .from(pilotBlackout)
-      .where(eq(pilotBlackout.pilotId, pilotId));
-
-    if (futureOnly) {
-      const now = new Date();
-      query = query.where(gte(pilotBlackout.endDate, now)) as typeof query;
-    }
-
-    const blackouts = await query.orderBy(pilotBlackout.startDate);
+      .where(condition)
+      .orderBy(pilotBlackout.startDate);
 
     return successResponse({ blackouts });
   } catch (error) {

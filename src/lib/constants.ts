@@ -69,6 +69,13 @@ export const VIEWER_PRODUCTS = {
   CONSTRUCT: 3,
 } as const;
 
+// Viewer page IDs in the Pages table (used for share link generation)
+export const VIEWER_PAGE_IDS: Record<string, number> = {
+  landscape: 25,
+  community: 26,
+  construct: 27,
+} as const;
+
 // Cache TTLs (in milliseconds)
 export const CACHE_TTL = {
   CONFIGURATION: 6 * 60 * 60 * 1000, // 6 hours

@@ -19,11 +19,14 @@ import {
   IconChecklist,
   IconTrendingUp,
   IconClock,
+  IconShare,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import { JobEditDialog } from "@/modules/workflow/components/job-edit-dialog";
 import { JobActionDialogs } from "@/modules/workflow/components/job-action-dialogs";
+import { ShareModal } from "@/components/shared/share-modal";
+import { VIEWER_PRODUCTS, VIEWER_PAGE_IDS } from "@/lib/constants";
 import { toast } from "sonner";
 
 interface JobData {
@@ -72,6 +75,14 @@ export default function JobDetailPage() {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<string | null>(null);
+  const [shareModal, setShareModal] = useState<{ pageId: number; requestToken: string } | null>(null);
+
+  // Maps VIEWER_PRODUCTS IDs to viewer type strings
+  const VIEWER_TYPE_MAP: Record<number, string> = {
+    [VIEWER_PRODUCTS.LANDSCAPE]: "landscape",
+    [VIEWER_PRODUCTS.COMMUNITY]: "community",
+    [VIEWER_PRODUCTS.CONSTRUCT]: "construct",
+  };
 
   const { data: job, isLoading } = useQuery({
     queryKey: ["job", jobId],
@@ -244,12 +255,28 @@ export default function JobDetailPage() {
               <div className="flex-1">
                 <p className="text-sm font-medium">Products ({job.products.length})</p>
                 {job.products.length > 0 ? (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {job.products.map((p) => (
-                      <Badge key={p.id} variant="secondary" className="text-xs">
-                        {p.name}
-                      </Badge>
-                    ))}
+                  <div className="mt-2 space-y-1.5">
+                    {job.products.map((p, idx) => {
+                      const viewerType = VIEWER_TYPE_MAP[p.id];
+                      const pageId = viewerType ? VIEWER_PAGE_IDS[viewerType] : null;
+                      const jobProductId = `${job.id}-${idx}`;
+                      return (
+                        <div key={p.id} className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {p.name}
+                          </Badge>
+                          {pageId && (
+                            <button
+                              onClick={() => setShareModal({ pageId, requestToken: jobProductId })}
+                              className="rounded p-0.5 text-muted-foreground hover:text-primary transition-colors"
+                              title={`Share ${viewerType} viewer`}
+                            >
+                              <IconShare className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">No products assigned</p>
@@ -412,6 +439,15 @@ export default function JobDetailPage() {
           setActionDialog(null);
         }}
       />
+
+      {shareModal && (
+        <ShareModal
+          pageId={shareModal.pageId}
+          requestToken={shareModal.requestToken}
+          open={!!shareModal}
+          onOpenChange={(open) => !open && setShareModal(null)}
+        />
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { successResponse, errorResponse, notFoundResponse } from "@/lib/utils/ap
 import { setMetaValue, callUpdateJobPipeline } from "@/lib/db/helpers";
 import { approveJobSchema } from "@/modules/workflow/schemas/job-schemas";
 import { getJobById } from "@/modules/workflow/services/job-service";
+import { createNotification } from "@/modules/notifications/notification-service";
 
 export const POST = withAuth(async (_user, req: NextRequest) => {
   const segments = new URL(req.url).pathname.split("/");
@@ -25,6 +26,18 @@ export const POST = withAuth(async (_user, req: NextRequest) => {
     await callUpdateJobPipeline(db, jobId);
 
     const updated = await getJobById(jobId);
+
+    // Fire-and-forget: notify job creator
+    if (updated) {
+      createNotification({
+        userId: updated.createdBy,
+        type: "job_approved",
+        title: `Job approved: ${updated.name || `#${jobId}`}`,
+        message: `Flight approved for ${parsed.data.approvedFlight}`,
+        link: `/workflow/jobs/${jobId}`,
+      });
+    }
+
     return successResponse(updated);
   } catch (error) {
     console.error("[API] Approve job error:", error);

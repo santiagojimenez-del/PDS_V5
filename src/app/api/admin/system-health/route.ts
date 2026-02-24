@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
+import packageJson from "../../../../../package.json";
 
 interface HealthCheck {
   service: string;
@@ -19,7 +20,7 @@ interface HealthCheck {
 
 export const GET = withAuth(async (user, request: NextRequest) => {
   // Only admins can access system health
-  if (user.role !== "Admin" && user.role !== "Super Admin") {
+  if (!user.roles.includes(0)) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 403 }
@@ -114,8 +115,16 @@ export const GET = withAuth(async (user, request: NextRequest) => {
     }
   }
 
-  // Calculate uptime (simplified - in production use actual process uptime)
+  // Calculate uptime
   const uptime = process.uptime ? Math.floor(process.uptime()) : 0;
+
+  // Runtime / version info — read server-side so the client never needs process.version
+  const sysInfo = {
+    nodeVersion:  process.version,
+    nextVersion:  packageJson.dependencies?.next ?? "unknown",
+    appVersion:   packageJson.version ?? "0.0.0",
+    environment:  process.env.NODE_ENV ?? "development",
+  };
 
   return NextResponse.json({
     success: true,
@@ -124,6 +133,7 @@ export const GET = withAuth(async (user, request: NextRequest) => {
       checks,
       uptime,
       timestamp: new Date().toISOString(),
+      sysInfo,
     },
   });
 });

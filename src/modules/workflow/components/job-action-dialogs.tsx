@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -24,20 +23,6 @@ interface JobActionDialogsProps {
   onSuccess?: () => void;
 }
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
-
-async function fetchUsers() {
-  const res = await fetch("/api/admin/users");
-  if (!res.ok) throw new Error("Failed to fetch users");
-  const json = await res.json();
-  return json.data.users as User[];
-}
-
 export function JobActionDialogs({
   jobIds,
   open,
@@ -54,12 +39,6 @@ export function JobActionDialogs({
   const [billedDate, setBilledDate] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const { data: users } = useQuery({
-    queryKey: ["users"],
-    queryFn: fetchUsers,
-    enabled: open === "schedule",
-  });
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -227,9 +206,6 @@ export function JobActionDialogs({
       setSubmitting(false);
     }
   };
-
-  // Filter staff and pilots only
-  const staffAndPilots = users?.filter((u) => u.role === "Staff" || u.role === "Pilot") || [];
 
   return (
     <>

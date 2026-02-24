@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { jobs, sites, organization, users } from "@/lib/db/schema";
-import { eq, count, sql, and, gte } from "drizzle-orm";
+import { eq, count, sql, and } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -28,6 +28,10 @@ async function getDashboardStats() {
   const sevenDaysAgo = new Date(now);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  // dates are stored as JSON: { requested: "YYYY-MM-DD", bill_paid: "YYYY-MM-DD", ... }
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+
   const [
     [jobCount],
     [siteCount],
@@ -52,14 +56,16 @@ async function getDashboardStats() {
     db
       .select({ value: count() })
       .from(jobs)
-      .where(gte(jobs.createdAt, sevenDaysAgo)),
+      .where(
+        sql`JSON_UNQUOTE(JSON_EXTRACT(${jobs.dates}, '$.requested')) >= ${sevenDaysAgoStr}`
+      ),
     db
       .select({ value: count() })
       .from(jobs)
       .where(
         and(
           eq(jobs.pipeline, PIPELINES.COMPLETED),
-          gte(jobs.dateCompleted, thirtyDaysAgo)
+          sql`JSON_UNQUOTE(JSON_EXTRACT(${jobs.dates}, '$.bill_paid')) >= ${thirtyDaysAgoStr}`
         )
       ),
     db
@@ -68,7 +74,7 @@ async function getDashboardStats() {
       .where(
         and(
           eq(jobs.pipeline, PIPELINES.COMPLETED),
-          sql`${jobs.dateCompleted} < ${thirtyDaysAgo}`
+          sql`JSON_UNQUOTE(JSON_EXTRACT(${jobs.dates}, '$.bill_paid')) < ${thirtyDaysAgoStr}`
         )
       ),
   ]);
@@ -106,10 +112,10 @@ async function getRecentActivity() {
       id: jobs.id,
       name: jobs.name,
       pipeline: jobs.pipeline,
-      createdAt: jobs.createdAt,
+      requestedDate: sql<string>`JSON_UNQUOTE(JSON_EXTRACT(${jobs.dates}, '$.requested'))`,
     })
     .from(jobs)
-    .orderBy(sql`${jobs.createdAt} DESC`)
+    .orderBy(sql`${jobs.id} DESC`)
     .limit(5);
 
   return recentJobs;
@@ -351,7 +357,9 @@ export default async function HubHomePage() {
                     <div>
                       <p className="font-medium">{job.name || `Job #${job.id}`}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(job.createdAt).toLocaleDateString()}
+                        {job.requestedDate
+                          ? new Date(job.requestedDate).toLocaleDateString()
+                          : "—"}
                       </p>
                     </div>
                   </div>

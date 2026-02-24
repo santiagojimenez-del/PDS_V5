@@ -8,6 +8,7 @@ import { setMetaValue, callUpdateJobPipeline } from "@/lib/db/helpers";
 import { scheduleJobSchema } from "@/modules/workflow/schemas/job-schemas";
 import { getJobById, updateJobDates } from "@/modules/workflow/services/job-service";
 import { sendPilotNotifications } from "@/modules/workflow/services/workflow-emails";
+import { createNotifications, createNotification } from "@/modules/notifications/notification-service";
 
 export const POST = withAuth(async (_user, req: NextRequest) => {
   const segments = new URL(req.url).pathname.split("/");
@@ -31,9 +32,26 @@ export const POST = withAuth(async (_user, req: NextRequest) => {
 
     const updated = await getJobById(jobId);
 
-    // Fire-and-forget: notify assigned pilots by email
+    // Fire-and-forget: notify assigned pilots by email + in-app
     if (personsAssigned.length > 0 && updated) {
       sendPilotNotifications(personsAssigned, updated, "scheduled", scheduledDate);
+      createNotifications(personsAssigned, {
+        type: "job_scheduled",
+        title: `You've been assigned: ${updated.name || `Job #${jobId}`}`,
+        message: `Scheduled for ${scheduledDate}`,
+        link: `/workflow/jobs/${jobId}`,
+      });
+    }
+
+    // Notify job creator too
+    if (updated) {
+      createNotification({
+        userId: updated.createdBy,
+        type: "job_scheduled",
+        title: `Job scheduled: ${updated.name || `#${jobId}`}`,
+        message: `Scheduled for ${scheduledDate} with ${personsAssigned.length} pilot(s)`,
+        link: `/workflow/jobs/${jobId}`,
+      });
     }
 
     return successResponse(updated);

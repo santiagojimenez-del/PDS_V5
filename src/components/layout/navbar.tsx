@@ -21,6 +21,7 @@ import {
 } from "@tabler/icons-react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { GlobalSearch } from "@/components/shared/global-search";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import type { AuthUser } from "@/modules/auth/types";
 
 interface NavbarProps {
@@ -112,8 +113,11 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
         <GlobalSearch />
       </div>
 
-      {/* Right: theme toggle + user menu */}
+      {/* Right: notifications + theme toggle + user menu */}
       <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Notifications */}
+        <NotificationBell />
+
         {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

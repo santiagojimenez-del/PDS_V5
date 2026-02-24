@@ -19,10 +19,13 @@ interface Assignment {
 }
 
 async function fetchPilotWeeklySchedule(pilotId: number, weekStartDate: Date) {
-  // This would ideally call a dedicated API endpoint
-  // For now, we'll use a placeholder
-  // TODO: Create /api/scheduling/pilots/[id]/calendar endpoint
-  return [] as Assignment[];
+  const weekStartStr = weekStartDate.toISOString().split("T")[0];
+  const res = await fetch(
+    `/api/scheduling/pilots/${pilotId}/calendar?weekStart=${weekStartStr}`
+  );
+  if (!res.ok) return [] as Assignment[];
+  const json = await res.json();
+  return (json.data?.assignments || []) as Assignment[];
 }
 
 export function PilotScheduleCalendar({

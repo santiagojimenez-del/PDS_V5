@@ -7,6 +7,7 @@ import { successResponse, errorResponse, notFoundResponse } from "@/lib/utils/ap
 import { setMetaValue, callUpdateJobPipeline } from "@/lib/db/helpers";
 import { billJobSchema } from "@/modules/workflow/schemas/job-schemas";
 import { getJobById, updateJobDates } from "@/modules/workflow/services/job-service";
+import { createNotification } from "@/modules/notifications/notification-service";
 
 export const POST = withAuth(async (_user, req: NextRequest) => {
   const segments = new URL(req.url).pathname.split("/");
@@ -29,6 +30,29 @@ export const POST = withAuth(async (_user, req: NextRequest) => {
     await callUpdateJobPipeline(db, jobId);
 
     const updated = await getJobById(jobId);
+
+    // Fire-and-forget: in-app notification to job creator
+    if (updated) {
+      createNotification({
+        userId: updated.createdBy,
+        type: "job_billed",
+        title: `Job billed: ${updated.name || `#${jobId}`}`,
+        message: `Invoice ${invoiceNumber} created`,
+        link: `/workflow/jobs/${jobId}`,
+      });
+
+      // Notify client if user type
+      if (updated.clientType === "user" && updated.clientId) {
+        createNotification({
+          userId: updated.clientId,
+          type: "job_billed",
+          title: `Invoice ready: ${updated.name || `Job #${jobId}`}`,
+          message: `Invoice ${invoiceNumber} has been sent to you`,
+          link: `/job/${jobId}`,
+        });
+      }
+    }
+
     return successResponse(updated);
   } catch (error) {
     console.error("[API] Bill job error:", error);

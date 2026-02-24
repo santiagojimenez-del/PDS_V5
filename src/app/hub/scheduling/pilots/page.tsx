@@ -6,20 +6,29 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconUser, IconCalendar, IconChevronRight } from "@tabler/icons-react";
 import Link from "next/link";
+import { ROLES } from "@/lib/constants";
 
-interface User {
+interface PilotUser {
   id: number;
-  name: string;
+  fullName: string;
   email: string;
-  role: string;
+  roles: number[];
 }
 
 async function fetchPilots() {
   const res = await fetch("/api/admin/users");
   if (!res.ok) throw new Error("Failed to fetch users");
   const json = await res.json();
-  const users = json.data.users as User[];
-  return users.filter((u) => u.role === "Pilot" || u.role === "Staff");
+  const users = json.data.users as PilotUser[];
+  return users.filter(
+    (u) => u.roles.includes(ROLES.PILOT) || u.roles.includes(ROLES.STAFF)
+  );
+}
+
+function pilotRoleLabel(roles: number[]): string {
+  if (roles.includes(ROLES.PILOT)) return "Pilot";
+  if (roles.includes(ROLES.STAFF)) return "Staff";
+  return "Unknown";
 }
 
 export default function PilotsListPage() {
@@ -78,7 +87,7 @@ export default function PilotsListPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {pilots?.filter((p) => p.role === "Pilot").length || 0}
+                  {pilots?.filter((p) => p.roles.includes(ROLES.PILOT)).length || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Active Pilots</p>
               </div>
@@ -94,7 +103,7 @@ export default function PilotsListPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">
-                  {pilots?.filter((p) => p.role === "Staff").length || 0}
+                  {pilots?.filter((p) => p.roles.includes(ROLES.STAFF)).length || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Staff Members</p>
               </div>
@@ -116,13 +125,13 @@ export default function PilotsListPage() {
                         <IconUser className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">{pilot.name}</p>
+                        <p className="font-medium">{pilot.fullName || pilot.email}</p>
                         <p className="text-xs text-muted-foreground">{pilot.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={pilot.role === "Pilot" ? "default" : "secondary"}>
-                        {pilot.role}
+                      <Badge variant={pilot.roles.includes(ROLES.PILOT) ? "default" : "secondary"}>
+                        {pilotRoleLabel(pilot.roles)}
                       </Badge>
                       <IconChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
