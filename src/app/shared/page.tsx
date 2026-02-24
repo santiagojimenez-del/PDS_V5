@@ -13,7 +13,7 @@
  *  4. If token is invalid/expired → show error
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +47,21 @@ type Status = "loading" | "valid" | "invalid" | "expired";
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SharedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    }>
+      <SharedContent />
+    </Suspense>
+  );
+}
+
+function SharedContent() {
   const searchParams = useSearchParams();
   const token        = searchParams.get("share_token");
   const [status,    setStatus]    = useState<Status>("loading");
@@ -77,18 +92,6 @@ export default function SharedPage() {
         setError("Failed to validate share link.");
       });
   }, [token]);
-
-  // ── Loading ──────────────────────────────────────────────────────────────────
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
-  }
 
   // ── Error states ─────────────────────────────────────────────────────────────
   if (status === "invalid" || status === "expired") {
