@@ -23,7 +23,6 @@ import {
   IconSend,
   IconChevronLeft,
   IconChevronRight,
-  IconFilter,
   IconX,
 } from "@tabler/icons-react";
 import { type JobData } from "./job-card";
@@ -240,7 +239,6 @@ export function KanbanBoard() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [showFilters, setShowFilters] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState<Set<number>>(new Set());
   // kanban selection: jobId → pipeline
   const [kanbanSelected, setKanbanSelected] = useState<Map<number, string>>(new Map());
@@ -568,9 +566,9 @@ export function KanbanBoard() {
           </Badge>
         </div>
 
-        {/* Search + filter controls */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 items-center gap-2">
+        {/* Search + filters (always visible) */}
+        <div className="rounded-lg border bg-card p-4 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-sm flex-1">
               <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -583,55 +581,26 @@ export function KanbanBoard() {
                 className="pl-9"
               />
             </div>
-            <Button
-              variant={
-                showFilters || activeFilterCount > 0 ? "default" : "outline"
-              }
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={cn(
-                "h-9 gap-1.5",
-                activeFilterCount > 0 &&
-                  !showFilters &&
-                  "bg-[#ff6600] hover:bg-[#e55c00] text-white"
-              )}
-            >
-              <IconFilter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filters</span>
-              {activeFilterCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="ml-0.5 h-5 min-w-[20px] rounded-full px-1.5 text-[10px]"
-                >
-                  {activeFilterCount}
-                </Badge>
-              )}
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {filteredCompleted.length} job
-            {filteredCompleted.length !== 1 ? "s" : ""}
-            {(search || activeFilterCount > 0) && " filtered"}
-          </p>
-        </div>
-
-        {/* Filter panel */}
-        {showFilters && (
-          <div className="rounded-lg border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h4 className="text-sm font-medium text-foreground">Filters</h4>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {filteredCompleted.length} job
+                {filteredCompleted.length !== 1 ? "s" : ""}
+                {(search || activeFilterCount > 0) && " filtered"}
+              </p>
               {activeFilterCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-muted-foreground"
+                  className="h-7 text-xs text-[#ff6600] hover:text-[#e55c00]"
                   onClick={resetFilters}
                 >
-                  <IconX className="mr-1 h-3 w-3" /> Clear all
+                  <IconX className="mr-1 h-3 w-3" /> Clear filters
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
                   Client
@@ -774,7 +743,7 @@ export function KanbanBoard() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* Table / empty state */}
         {filteredCompleted.length === 0 ? (
