@@ -26,6 +26,7 @@ interface BulkToolbarProps {
   selectedJobs: Set<number>;
   activeTab: string;
   clearSelection: () => void;
+  bottomOffset?: string; // e.g. "bottom-20" to stack above another toolbar
 }
 
 type DialogType = "approve" | "schedule" | "flight-log" | "deliver" | "bill" | "delete" | null;
@@ -52,7 +53,7 @@ const ACTIONS_BY_PIPELINE: Record<string, { key: DialogType; label: string; icon
   ],
 };
 
-export function BulkToolbar({ selectedJobs, activeTab, clearSelection }: BulkToolbarProps) {
+export function BulkToolbar({ selectedJobs, activeTab, clearSelection, bottomOffset = "bottom-4" }: BulkToolbarProps) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const count = selectedJobs.size;
 
@@ -63,7 +64,7 @@ export function BulkToolbar({ selectedJobs, activeTab, clearSelection }: BulkToo
 
   return (
     <>
-      <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 animate-in slide-in-from-bottom duration-200">
+      <div className={`fixed ${bottomOffset} left-1/2 z-50 -translate-x-1/2 animate-in slide-in-from-bottom duration-200`}>
         <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 shadow-lg">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="font-semibold">

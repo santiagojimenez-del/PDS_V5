@@ -16,6 +16,7 @@ export interface JobData {
   clientId: number | null;
   dates: Record<string, string>;
   products: { id: number; name: string }[];
+  amountPayable: number | null;
 }
 
 interface JobCardProps {

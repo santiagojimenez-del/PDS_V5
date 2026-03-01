@@ -31,6 +31,7 @@ import {
 import {
   IconRepeat, IconMapPin, IconBuilding, IconCalendar, IconPlus,
   IconEdit, IconTrash, IconLoader2, IconBolt, IconPower,
+  IconEye, IconFileText,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
@@ -473,12 +474,128 @@ function TemplateModal({
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+// ── Occurrences dialog ────────────────────────────────────────────────────────
+
+interface Occurrence {
+  id: number;
+  occurrenceAt: string;
+  status: "planned" | "created" | "skipped" | "cancelled";
+  jobId: number | null;
+  jobName: string | null;
+  jobPipeline: string | null;
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  planned:   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  created:   "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  skipped:   "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+};
+
+function OccurrencesDialog({
+  template,
+  onClose,
+}: {
+  template: RecurringTemplate;
+  onClose: () => void;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["recurring-occurrences", template.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/recurring/${template.id}/occurrences`);
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return json.data.occurrences as Occurrence[];
+    },
+  });
+
+  function fmtDate(raw: string) {
+    try {
+      return new Date(raw).toLocaleDateString("en-US", {
+        month: "short", day: "numeric", year: "numeric",
+      });
+    } catch { return raw; }
+  }
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <IconRepeat className="h-4 w-4 text-primary" />
+            Occurrences — {template.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        {isLoading ? (
+          <div className="space-y-2 py-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 w-full" />
+            ))}
+          </div>
+        ) : !data?.length ? (
+          <div className="py-10 text-center text-sm text-muted-foreground">
+            No occurrences generated yet.
+          </div>
+        ) : (
+          <div className="max-h-[60vh] overflow-y-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50 text-left text-xs font-medium text-muted-foreground">
+                  <th className="px-4 py-2.5">Date</th>
+                  <th className="px-4 py-2.5">Status</th>
+                  <th className="px-4 py-2.5">Job</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((o) => (
+                  <tr key={o.id} className="border-b last:border-0 hover:bg-muted/20">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      {fmtDate(o.occurrenceAt)}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${STATUS_STYLES[o.status] ?? ""}`}>
+                        {o.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {o.jobId ? (
+                        <a
+                          href={`/workflow/jobs/${o.jobId}`}
+                          className="flex items-center gap-1.5 text-primary hover:underline"
+                        >
+                          <IconFileText className="h-3.5 w-3.5 shrink-0" />
+                          #{o.jobId}{o.jobName ? ` — ${o.jobName}` : ""}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function RecurringJobsPage() {
   const qc = useQueryClient();
   const [modal,     setModal]     = useState<{ open: boolean; template: RecurringTemplate | null }>({ open: false, template: null });
   const [deleting,  setDeleting]  = useState<RecurringTemplate | null>(null);
   const [toggling,  setToggling]  = useState<number | null>(null);
   const [generating, setGenerating] = useState<number | null>(null);
+  const [viewOccurrences, setViewOccurrences] = useState<RecurringTemplate | null>(null);
+  const [addingToBids, setAddingToBids] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["recurring"],
@@ -568,6 +685,30 @@ export default function RecurringJobsPage() {
     }
   };
 
+  const handleAddToBids = async (t: RecurringTemplate) => {
+    setAddingToBids(t.id);
+    try {
+      const res = await fetch("/api/workflow/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: t.name,
+          siteId: t.siteId,
+          clientId: t.clientId,
+          clientType: t.clientType,
+          dateRequested: new Date().toISOString().slice(0, 10),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || "Failed to create job"); return; }
+      toast.success(`Job #${json.data.id} added to Bids`);
+    } catch {
+      toast.error("Failed to create job");
+    } finally {
+      setAddingToBids(null);
+    }
+  };
+
   const sites = sitesData?.sites || [];
   const orgs  = orgsData?.organizations || [];
 
@@ -585,106 +726,169 @@ export default function RecurringJobsPage() {
         </Button>
       </div>
 
-      {/* List */}
+      {/* Table */}
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-lg" />
+          ))}
         </div>
       ) : (data?.templates.length ?? 0) === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <IconRepeat className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">No recurring job templates yet.</p>
-            <Button
-              variant="outline"
-              className="mt-4 gap-2"
-              onClick={() => setModal({ open: true, template: null })}
-            >
-              <IconPlus className="h-4 w-4" /> Create First Template
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border py-16 text-center">
+          <IconRepeat className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+          <p className="text-muted-foreground">No recurring job templates yet.</p>
+          <Button
+            variant="outline"
+            className="mt-4 gap-2"
+            onClick={() => setModal({ open: true, template: null })}
+          >
+            <IconPlus className="h-4 w-4" /> Create First Template
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-3">
-          {data!.templates.map((t) => (
-            <Card key={t.id} className={t.active ? "" : "opacity-60"}>
-              <CardContent className="flex items-start justify-between gap-4 p-4">
-                <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <IconRepeat className="h-4 w-4 shrink-0 text-primary" />
-                    <h3 className="font-semibold truncate">{t.name}</h3>
-                    <Badge variant={t.active ? "default" : "secondary"} className="text-xs">
-                      {t.active ? "Active" : "Inactive"}
-                    </Badge>
-                    {t.isManual && <Badge variant="outline" className="text-xs">Manual</Badge>}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <IconMapPin className="h-3 w-3" /> {t.siteName}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <IconBuilding className="h-3 w-3" /> {t.clientName}
-                    </span>
-                    {!t.isManual && (
-                      <span className="flex items-center gap-1">
-                        <IconCalendar className="h-3 w-3" /> {humanRRule(t.rrule)}
-                      </span>
-                    )}
-                    <span>{t.timezone}</span>
-                  </div>
-                </div>
+        <div className="rounded-lg border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead>
+                <tr className="border-b bg-muted/50 text-left text-xs font-medium text-muted-foreground">
+                  <th className="px-4 py-3">Template</th>
+                  <th className="px-4 py-3">Site</th>
+                  <th className="px-4 py-3">Client</th>
+                  <th className="px-4 py-3">Schedule</th>
+                  <th className="px-4 py-3">Timezone</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
 
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  <span className="text-lg font-bold">${t.amountPayable}</span>
+                </tr>
+              </thead>
+              <tbody>
+                {data!.templates.map((t) => (
+                  <tr
+                    key={t.id}
+                    className={`border-b last:border-0 transition-colors hover:bg-muted/30 ${!t.active ? "opacity-50" : ""}`}
+                  >
+                    {/* Template name + badges */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <IconRepeat className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="max-w-[200px] truncate font-medium text-sm">
+                          {t.name}
+                        </span>
+                        {t.isManual && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            Manual
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
 
-                  <div className="flex items-center gap-1">
-                    {/* Generate occurrences */}
-                    <Button
-                      variant="ghost" size="sm"
-                      onClick={() => handleGenerate(t)}
-                      disabled={generating === t.id}
-                      title="Generate occurrences"
-                    >
-                      {generating === t.id
-                        ? <IconLoader2 className="h-4 w-4 animate-spin" />
-                        : <IconBolt className="h-4 w-4" />}
-                    </Button>
+                    {/* Site */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <IconMapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="max-w-[160px] truncate">{t.siteName}</span>
+                      </div>
+                    </td>
 
-                    {/* Toggle active */}
-                    <Button
-                      variant="ghost" size="sm"
-                      onClick={() => handleToggle(t)}
-                      disabled={toggling === t.id}
-                      title={t.active ? "Deactivate" : "Activate"}
-                    >
-                      {toggling === t.id
-                        ? <IconLoader2 className="h-4 w-4 animate-spin" />
-                        : <IconPower className={`h-4 w-4 ${t.active ? "text-green-500" : "text-muted-foreground"}`} />}
-                    </Button>
+                    {/* Client */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <IconBuilding className="h-3.5 w-3.5 shrink-0" />
+                        <span className="max-w-[160px] truncate">{t.clientName}</span>
+                      </div>
+                    </td>
 
-                    {/* Edit */}
-                    <Button
-                      variant="ghost" size="sm"
-                      onClick={() => setModal({ open: true, template: t })}
-                      title="Edit"
-                    >
-                      <IconEdit className="h-4 w-4" />
-                    </Button>
+                    {/* Schedule */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <IconCalendar className="h-3.5 w-3.5 shrink-0" />
+                        <span className="max-w-[180px] truncate">
+                          {t.isManual ? "On demand" : humanRRule(t.rrule)}
+                        </span>
+                      </div>
+                    </td>
 
-                    {/* Delete */}
-                    <Button
-                      variant="ghost" size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleting(t)}
-                      title="Delete"
-                    >
-                      <IconTrash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    {/* Timezone */}
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                      {t.timezone}
+                    </td>
+
+                    {/* Amount */}
+                    <td className="px-4 py-3 text-right">
+                      <span className="font-semibold text-sm">${t.amountPayable}</span>
+                    </td>
+
+                    {/* Status — click to toggle */}
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleToggle(t)}
+                        disabled={toggling === t.id}
+                        title={t.active ? "Click to deactivate" : "Click to activate"}
+                        className="inline-flex items-center gap-1"
+                      >
+                        {toggling === t.id ? (
+                          <IconLoader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Badge
+                            variant={t.active ? "default" : "secondary"}
+                            className="cursor-pointer text-xs transition-opacity hover:opacity-70"
+                          >
+                            {t.active ? "Active" : "Inactive"}
+                          </Badge>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* Actions: Add to Bids · Edit · View Occurrences · Delete */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {/* Add to Bids */}
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary"
+                          onClick={() => handleAddToBids(t)}
+                          disabled={addingToBids === t.id}
+                          title="Add to Bids"
+                        >
+                          {addingToBids === t.id
+                            ? <IconLoader2 className="h-4 w-4 animate-spin" />
+                            : <IconPlus className="h-4 w-4" />}
+                        </Button>
+
+                        {/* Edit */}
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8"
+                          onClick={() => setModal({ open: true, template: t })}
+                          title="Edit template"
+                        >
+                          <IconEdit className="h-4 w-4" />
+                        </Button>
+
+                        {/* View Occurrences */}
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8"
+                          onClick={() => setViewOccurrences(t)}
+                          title="View occurrences"
+                        >
+                          <IconEye className="h-4 w-4" />
+                        </Button>
+
+                        {/* Delete */}
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setDeleting(t)}
+                          title="Delete template"
+                        >
+                          <IconTrash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -699,6 +903,14 @@ export default function RecurringJobsPage() {
           template={modal.template}
           sites={sites}
           orgs={orgs}
+        />
+      )}
+
+      {/* View occurrences dialog */}
+      {viewOccurrences && (
+        <OccurrencesDialog
+          template={viewOccurrences}
+          onClose={() => setViewOccurrences(null)}
         />
       )}
 

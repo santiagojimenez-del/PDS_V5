@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { jobs, jobMeta, sites, organization, userMeta, products } from "@/lib/db/schema";
-import { eq, ne, inArray, count, sql } from "drizzle-orm";
+import { eq, ne, inArray, count, sql, and } from "drizzle-orm";
 import { withAuth } from "@/lib/auth/middleware";
 import { successResponse, errorResponse } from "@/lib/utils/api";
 import { setMetaValue, callUpdateJobPipeline } from "@/lib/db/helpers";
@@ -120,6 +120,26 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
   const productMap: Record<number, string> = {};
   for (const p of productRows) productMap[p.id] = p.name;
 
+  // Batch load amount_payable from Job_Meta
+  const allJobIds = jobRows.map((j) => j.id);
+  const amountMap: Record<number, number> = {};
+  if (allJobIds.length > 0) {
+    const metaRows = await db
+      .select({ jobId: jobMeta.jobId, metaValue: jobMeta.metaValue })
+      .from(jobMeta)
+      .where(
+        and(
+          eq(jobMeta.metaKey, "amount_payable"),
+          allJobIds.length === 1
+            ? eq(jobMeta.jobId, allJobIds[0])
+            : inArray(jobMeta.jobId, allJobIds)
+        )
+      );
+    for (const m of metaRows) {
+      amountMap[m.jobId] = parseFloat(m.metaValue ?? "0") || 0;
+    }
+  }
+
   // Build response
   const enrichedJobs = jobRows.map((job) => {
     const clientId = job.clientId ? parseInt(job.clientId) : null;
@@ -147,6 +167,7 @@ export const GET = withAuth(async (_user, req: NextRequest) => {
       clientId,
       dates: job.dates as Record<string, string>,
       products: productList,
+      amountPayable: amountMap[job.id] ?? null,
     };
   });
 
