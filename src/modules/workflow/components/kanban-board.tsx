@@ -742,7 +742,6 @@ export function KanbanBoard() {
                 )}
               </div>
             )}
-          </div>
         </div>
 
         {/* Table / empty state */}
