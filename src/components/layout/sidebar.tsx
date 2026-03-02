@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -56,17 +56,25 @@ export function Sidebar({
 
   const getHref = (page: string) => {
     if (!page || page === "/") return `/${app}`;
-    // If page already starts with /, use as is (absolute path)
     if (page.startsWith("/")) return page;
-    // Otherwise, prepend the app prefix
     return `/${app}/${page}`;
   };
 
-  const isActive = (page: string) => {
-    const href = getHref(page);
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-  };
+  // Find the most specific (longest) matching href so that e.g.
+  // /hub/onboard/contact/manage doesn't also activate /hub/onboard/contact
+  const activeHref = useMemo(() => {
+    let best = "";
+    navigation.forEach((group) => {
+      group.items.forEach((item) => {
+        const href = getHref(item.page);
+        const matches = pathname === href || pathname.startsWith(href + "/");
+        if (matches && href.length > best.length) best = href;
+      });
+    });
+    return best;
+  }, [pathname, navigation]);
+
+  const isActive = (page: string) => getHref(page) === activeHref;
 
   const sidebarContent = (
     <>
