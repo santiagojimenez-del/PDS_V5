@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -211,10 +219,27 @@ export default function SitesPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Site</TableHead>
+                <TableHead>Address</TableHead>
+                <TableHead>Created By</TableHead>
+                <TableHead className="text-right">Jobs</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-8" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       ) : view === "map" ? (
         <div className="space-y-4">
@@ -259,31 +284,43 @@ export default function SitesPage() {
             </div>
           ) : (
             <>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {paginatedSites.map((site) => (
-                  <Card
-                    key={site.id}
-                    className="cursor-pointer transition-shadow hover:shadow-md"
-                    onClick={() => router.push(`/workflow/sites/${site.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <IconMapPin className="h-4 w-4 text-primary" />
-                          <h3 className="font-semibold text-sm">{site.name}</h3>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          <IconBriefcase className="mr-1 h-3 w-3" />
-                          {site.jobCount}
-                        </Badge>
-                      </div>
-                      {site.address && (
-                        <p className="mb-1 text-xs text-muted-foreground line-clamp-2">{site.address}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">Created by {site.createdBy}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Site</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead>Created By</TableHead>
+                      <TableHead className="text-right">Jobs</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSites.map((site) => (
+                      <TableRow
+                        key={site.id}
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/workflow/sites/${site.id}`)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <IconMapPin className="h-4 w-4 shrink-0 text-primary" />
+                            <span className="font-medium">{site.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {site.address || <span className="text-muted-foreground/50">—</span>}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{site.createdBy}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline" className="text-xs">
+                            <IconBriefcase className="mr-1 h-3 w-3" />
+                            {site.jobCount}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Pagination */}
