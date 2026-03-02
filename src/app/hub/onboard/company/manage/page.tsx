@@ -1,11 +1,18 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { IconBuilding, IconSearch, IconBriefcase, IconUsers, IconChevronRight } from "@tabler/icons-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { IconBuilding, IconSearch, IconBriefcase, IconUsers } from "@tabler/icons-react";
 import { useState } from "react";
 import Link from "next/link";
 
@@ -53,47 +60,62 @@ export default function ManageCompanyPage() {
         />
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-28" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((org) => (
-            <Link key={org.id} href={`/hub/onboard/company/manage/${org.id}`}>
-              <Card className="cursor-pointer transition-shadow hover:shadow-md hover:border-primary/40">
-                <CardContent className="p-4">
-                  <div className="mb-2 flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <IconBuilding className="h-4 w-4 text-primary" />
-                      <h3 className="font-semibold text-sm">{org.name}</h3>
-                    </div>
-                    <IconChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  {org.address && (
-                    <p className="mb-2 text-xs text-muted-foreground line-clamp-2">{org.address}</p>
-                  )}
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <Badge variant="outline" className="text-xs">
-                      <IconBriefcase className="mr-1 h-3 w-3" />
-                      {org.jobCount} jobs
-                    </Badge>
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Company</TableHead>
+              <TableHead>Address</TableHead>
+              <TableHead className="text-right">Contacts</TableHead>
+              <TableHead className="text-right">Jobs</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-8" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-8" /></TableCell>
+                </TableRow>
+              ))
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                  No companies found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((org) => (
+                <TableRow key={org.id} className="cursor-pointer">
+                  <TableCell>
+                    <Link href={`/hub/onboard/company/manage/${org.id}`} className="flex items-center gap-2 hover:underline">
+                      <IconBuilding className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="font-medium">{org.name}</span>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {org.address || <span className="text-muted-foreground/50">—</span>}
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Badge variant="outline" className="text-xs">
                       <IconUsers className="mr-1 h-3 w-3" />
-                      {org.contactCount} contacts
+                      {org.contactCount}
                     </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-          {filtered.length === 0 && (
-            <p className="col-span-full py-8 text-center text-muted-foreground">No companies found.</p>
-          )}
-        </div>
-      )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Badge variant="outline" className="text-xs">
+                      <IconBriefcase className="mr-1 h-3 w-3" />
+                      {org.jobCount}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
