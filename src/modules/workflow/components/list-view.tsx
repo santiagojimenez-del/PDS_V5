@@ -299,7 +299,7 @@ export function ListView() {
             PIPELINES.COMPLETED,
           ];
           cmp =
-            order.indexOf(a.pipeline) - order.indexOf(b.pipeline);
+            (order as string[]).indexOf(a.pipeline) - (order as string[]).indexOf(b.pipeline);
           break;
         }
         case "site":
