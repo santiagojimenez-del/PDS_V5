@@ -20,6 +20,36 @@ interface LoginResult {
   user?: AuthUser;
 }
 
+/**
+ * Extract a human-readable browser/device name from a User-Agent string.
+ * Returns a short label like "Chrome on Windows" or "Safari on iPhone".
+ */
+function parseBrowserName(userAgent: string): string {
+  if (!userAgent || userAgent === "unknown") return "Unknown browser";
+
+  const ua = userAgent.toLowerCase();
+
+  const browser =
+    ua.includes("edg/")         ? "Edge" :
+    ua.includes("opr/") || ua.includes("opera") ? "Opera" :
+    ua.includes("chrome")        ? "Chrome" :
+    ua.includes("safari")        ? "Safari" :
+    ua.includes("firefox")       ? "Firefox" :
+    ua.includes("curl")          ? "cURL" :
+                                   "Unknown browser";
+
+  const os =
+    ua.includes("iphone")        ? "iPhone" :
+    ua.includes("ipad")          ? "iPad" :
+    ua.includes("android")       ? "Android" :
+    ua.includes("windows")       ? "Windows" :
+    ua.includes("mac os")        ? "macOS" :
+    ua.includes("linux")         ? "Linux" :
+                                   "Unknown OS";
+
+  return `${browser} on ${os}`;
+}
+
 function buildMetaMap(meta: { metaKey: string; metaValue: string | null }[]): Record<string, string | null> {
   const map: Record<string, string | null> = {};
   for (const m of meta) {
@@ -169,6 +199,59 @@ async function createSession(
   ip: string,
   userAgent: string
 ): Promise<LoginResult> {
+  // ── New-IP detection ────────────────────────────────────────────────────────
+  // Check existing session tokens to determine if this IP has been seen before.
+  // If it is new, send a security notification email (non-blocking).
+  try {
+    const userRow = await db
+      .select({ tokens: users.tokens })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (userRow.length) {
+      const existingTokens = parseTokens(userRow[0].tokens);
+      const knownIPs = new Set(
+        existingTokens
+          .filter((t): t is SessionToken => t.type === "session")
+          .map((t) => t.options?.ip)
+          .filter(Boolean)
+      );
+
+      const isNewIP = ip !== "unknown" && !knownIPs.has(ip);
+
+      if (isNewIP) {
+        const firstName = metaMap.first_name || email;
+        const loginAt = new Date().toLocaleString("en-US", {
+          dateStyle: "full",
+          timeStyle: "short",
+          timeZone: "UTC",
+        }) + " UTC";
+
+        // Parse a readable browser name from the user-agent string
+        const browser = parseBrowserName(userAgent);
+
+        emailService.sendTemplate({
+          to: { email, name: firstName },
+          template: "new-login",
+          data: {
+            userName: firstName,
+            ipAddress: ip,
+            browser,
+            loginAt,
+            manageSessionsUrl: `${process.env.NEXT_PUBLIC_APP_URL || ""}/settings`,
+          },
+        }).catch((err) => {
+          console.error("[Auth] Failed to send new-login notification:", err);
+        });
+      }
+    }
+  } catch (err) {
+    // Never block login due to notification failure
+    console.error("[Auth] Error during new-IP check:", err);
+  }
+  // ── End new-IP detection ────────────────────────────────────────────────────
+
   const token = generateToken(100);
 
   const sessionToken: SessionToken = {

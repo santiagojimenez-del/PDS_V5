@@ -52,6 +52,8 @@ export class TemplateEngine {
           return (await import("./workflow/delivery-notification")).DeliveryNotificationEmail;
         case "job-status-update":
           return (await import("./workflow/job-status-update")).JobStatusUpdateEmail;
+        case "new-login":
+          return (await import("./auth/new-login")).NewLoginEmail;
         default:
           return null;
       }
@@ -95,6 +97,8 @@ export class TemplateEngine {
         const d = data as EmailTemplateData["job-status-update"];
         return `Job update #${d.jobId} - ProDrones Hub`;
       }
+      case "new-login":
+        return "New Login Detected - ProDrones Hub";
       default:
         return "Notification - ProDrones Hub";
     }

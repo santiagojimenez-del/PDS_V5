@@ -47,7 +47,8 @@ export type EmailTemplate =
   | "signup-confirmation"
   | "pilot-notification"
   | "delivery-notification"
-  | "job-status-update";
+  | "job-status-update"
+  | "new-login";
 
 export interface EmailTemplateData {
   "2fa-code": {
@@ -91,6 +92,13 @@ export interface EmailTemplateData {
     oldStatus: string;
     newStatus: string;
     message?: string;
+  };
+  "new-login": {
+    userName: string;
+    ipAddress: string;
+    browser: string;
+    loginAt: string;
+    manageSessionsUrl: string;
   };
 }
 
