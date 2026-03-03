@@ -26,6 +26,16 @@ import { useState } from "react";
 import { JobEditDialog } from "@/modules/workflow/components/job-edit-dialog";
 import { JobActionDialogs } from "@/modules/workflow/components/job-action-dialogs";
 import { ShareModal } from "@/components/shared/share-modal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { VIEWER_PRODUCTS, VIEWER_PAGE_IDS } from "@/lib/constants";
 import { toast } from "sonner";
 
@@ -76,6 +86,7 @@ export default function JobDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<string | null>(null);
   const [shareModal, setShareModal] = useState<{ pageId: number; requestToken: string } | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   // Maps VIEWER_PRODUCTS IDs to viewer type strings
   const VIEWER_TYPE_MAP: Record<number, string> = {
@@ -106,11 +117,7 @@ export default function JobDetailPage() {
     },
   });
 
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this job? This action cannot be undone.")) {
-      deleteMutation.mutate();
-    }
-  };
+  const handleDelete = () => setConfirmDeleteOpen(true);
 
   const getAvailableActions = (pipeline: string) => {
     const actions = [];
@@ -448,6 +455,27 @@ export default function JobDetailPage() {
           onOpenChange={(open) => !open && setShareModal(null)}
         />
       )}
+
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{job?.name || `Job #${jobId}`}</strong>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteMutation.mutate()}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

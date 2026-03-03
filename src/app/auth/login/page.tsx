@@ -141,7 +141,7 @@ export default function LoginPage() {
           <CardFooter className="flex flex-col gap-3 pt-2">
             <Button
               type="submit"
-              className="h-10 w-full bg-[#ff6600] text-white hover:bg-[#e55c00] font-medium"
+              className="h-10 w-full bg-primary text-white hover:bg-primary/90 font-medium"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign in"}
@@ -149,13 +149,13 @@ export default function LoginPage() {
             <div className="flex items-center justify-between w-full text-sm">
               <Link
                 href="/auth/forgot-password"
-                className="text-muted-foreground transition-colors hover:text-[#ff6600]"
+                className="text-muted-foreground transition-colors hover:text-primary"
               >
                 Forgot password?
               </Link>
               <Link
                 href="/auth/register"
-                className="text-muted-foreground transition-colors hover:text-[#ff6600]"
+                className="text-muted-foreground transition-colors hover:text-primary"
               >
                 Create account
               </Link>

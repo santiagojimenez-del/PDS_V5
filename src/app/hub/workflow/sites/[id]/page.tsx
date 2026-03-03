@@ -2,6 +2,16 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, lazy, Suspense } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useParams, useRouter } from "next/navigation";
 import {
   Card,
@@ -77,6 +87,7 @@ export default function SiteDetailPage() {
 
   // Edit state
   const [editing, setEditing] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editAddress, setEditAddress] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -221,10 +232,7 @@ export default function SiteDetailPage() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => {
-                    if (confirm(`Delete site "${site.name}"? This cannot be undone.`))
-                      deleteSite.mutate();
-                  }}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   disabled={deleteSite.isPending}
                 >
                   <IconTrash className="mr-2 h-4 w-4" />
@@ -435,6 +443,26 @@ export default function SiteDetailPage() {
           )}
         </CardContent>
       </Card>
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Site</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{site.name}</strong>?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteSite.mutate()}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

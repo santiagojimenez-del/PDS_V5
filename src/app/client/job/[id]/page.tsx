@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import { IconAlertCircle } from "@tabler/icons-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,7 +43,7 @@ const PIPELINE_COLORS: Record<string, string> = {
 export default function ClientJobDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { data: job, isLoading } = useQuery({
+  const { data: job, isLoading, isError } = useQuery({
     queryKey: ["client-job", id],
     queryFn: () => fetchJob(id),
   });
@@ -56,8 +57,25 @@ export default function ClientJobDetailPage() {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <IconAlertCircle className="h-10 w-10 text-destructive" />
+        <p className="text-lg font-semibold">Could not load job</p>
+        <p className="text-sm text-muted-foreground">There was an error loading this job. Please try again.</p>
+        <Link href="/client" className="text-sm text-primary underline underline-offset-4">Back to Dashboard</Link>
+      </div>
+    );
+  }
+
   if (!job) {
-    return <p className="py-8 text-center text-muted-foreground">Job not found.</p>;
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-center">
+        <p className="text-lg font-semibold">Job not found</p>
+        <p className="text-sm text-muted-foreground">This job does not exist or you do not have access to it.</p>
+        <Link href="/client" className="text-sm text-primary underline underline-offset-4">Back to Dashboard</Link>
+      </div>
+    );
   }
 
   return (

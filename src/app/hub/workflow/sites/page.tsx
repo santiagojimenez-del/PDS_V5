@@ -37,6 +37,7 @@ import {
 import { useState, useMemo, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser, useHasPermission } from "@/modules/permissions/hooks/use-permissions";
+import { toast } from "sonner";
 
 const SitesMap = lazy(() =>
   import("@/components/shared/sites-map").then((m) => ({ default: m.SitesMap }))
@@ -69,7 +70,7 @@ export default function SitesPage() {
   const [selectedSiteId, setSelectedSiteId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const { data, isLoading } = useQuery({ queryKey: ["sites"], queryFn: fetchSites });
+  const { data, isLoading } = useQuery({ queryKey: ["sites"], queryFn: fetchSites, staleTime: 60_000 });
   const queryClient = useQueryClient();
 
   // User permissions
@@ -100,6 +101,14 @@ export default function SitesPage() {
     const lng = parseFloat(form.lng);
     if (isNaN(lat) || isNaN(lng)) {
       setFormError("Latitude and Longitude must be valid numbers.");
+      return;
+    }
+    if (lat < -90 || lat > 90) {
+      setFormError("Latitude must be between -90 and 90.");
+      return;
+    }
+    if (lng < -180 || lng > 180) {
+      setFormError("Longitude must be between -180 and 180.");
       return;
     }
 
@@ -145,8 +154,8 @@ export default function SitesPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("Failed to export sites:", error);
+    } catch {
+      toast.error("Failed to export sites. Please try again.");
     }
   }
 

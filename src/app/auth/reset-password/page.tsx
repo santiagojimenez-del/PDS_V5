@@ -113,7 +113,7 @@ function ResetPasswordForm() {
             onClick={() => setTheme(value)}
             className={`rounded-md p-1.5 transition-colors ${
               theme === value
-                ? "bg-[#ff6600] text-white"
+                ? "bg-primary text-white"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             title={value.charAt(0).toUpperCase() + value.slice(1)}
@@ -182,14 +182,14 @@ function ResetPasswordForm() {
           <CardFooter className="flex flex-col gap-3 pt-2">
             <Button
               type="submit"
-              className="h-10 w-full bg-[#ff6600] text-white hover:bg-[#e55c00] font-medium"
+              className="h-10 w-full bg-primary text-white hover:bg-primary/90 font-medium"
               disabled={loading}
             >
               {loading ? "Resetting password..." : "Reset password"}
             </Button>
             <Link
               href="/auth/forgot-password"
-              className="text-sm text-muted-foreground transition-colors hover:text-[#ff6600]"
+              className="text-sm text-muted-foreground transition-colors hover:text-primary"
             >
               Request a new reset link
             </Link>

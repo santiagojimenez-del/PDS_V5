@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
             onClick={() => setTheme(value)}
             className={`rounded-md p-1.5 transition-colors ${
               theme === value
-                ? "bg-[#ff6600] text-white"
+                ? "bg-primary text-white"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             title={value.charAt(0).toUpperCase() + value.slice(1)}
@@ -141,14 +141,14 @@ export default function ForgotPasswordPage() {
             <CardFooter className="flex flex-col gap-3 pt-2">
               <Button
                 type="submit"
-                className="h-10 w-full bg-[#ff6600] text-white hover:bg-[#e55c00] font-medium"
+                className="h-10 w-full bg-primary text-white hover:bg-primary/90 font-medium"
                 disabled={loading}
               >
                 {loading ? "Sending..." : "Send reset link"}
               </Button>
               <Link
                 href="/auth/login"
-                className="text-sm text-muted-foreground transition-colors hover:text-[#ff6600]"
+                className="text-sm text-muted-foreground transition-colors hover:text-primary"
               >
                 Back to sign in
               </Link>
@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
             </div>
             <Link
               href="/auth/login"
-              className="block text-center text-sm text-muted-foreground transition-colors hover:text-[#ff6600]"
+              className="block text-center text-sm text-muted-foreground transition-colors hover:text-primary"
             >
               Return to sign in now
             </Link>

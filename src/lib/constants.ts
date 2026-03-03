@@ -83,3 +83,13 @@ export const CACHE_TTL = {
   USER_SESSIONS: 5 * 60 * 1000, // 5 minutes
   COLUMN_METADATA: 60 * 60 * 1000, // 1 hour
 } as const;
+
+// App route constants — single source of truth for redirect paths
+export const ROUTES = {
+  LOGIN: "/login",
+  CLIENT_HOME: "/sites",
+  HUB_HOME: "/workflow/jobs",
+} as const;
+
+// Minimum password length — shared across all validation contexts
+export const MIN_PASSWORD_LENGTH = 8;

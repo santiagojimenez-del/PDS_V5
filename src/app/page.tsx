@@ -1,22 +1,19 @@
 import { getCurrentUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
+import { ROUTES, ROLES } from "@/lib/constants";
 
 export default async function RootPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(ROUTES.LOGIN);
   }
 
-  // Redirect to the appropriate app based on user's primary role
-  if (user.roles.includes(1)) {
-    // Client role → client portal
-    redirect("/sites");
-  } else if (user.roles.includes(0)) {
-    // Admin → hub home (admins can access everything)
-    redirect("/workflow/jobs");
+  // Redirect to the appropriate portal based on user's primary role
+  if (user.roles.includes(ROLES.CLIENT)) {
+    redirect(ROUTES.CLIENT_HOME);
   } else {
-    // Staff, Pilot, Manager → hub home
-    redirect("/workflow/jobs");
+    // Admin, Staff, Pilot, Manager, Developer → hub
+    redirect(ROUTES.HUB_HOME);
   }
 }

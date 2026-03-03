@@ -13,7 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ProDrones Hub",
   description: "Internal operations platform for Professional Drone Solutions",
-  icons: { icon: "/img/PDSLogo1-xsm.png.png" },
+  icons: { icon: "/img/PDSLogo1-xsm.png" },
 };
 
 export default function RootLayout({

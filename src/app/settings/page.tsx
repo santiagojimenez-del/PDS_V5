@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCurrentUser } from "@/modules/permissions/hooks/use-permissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,15 +45,17 @@ export default function SettingsPage() {
   const [profileReady, setProfileReady] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Sync form when data loads (only once)
-  if (profileData && !profileReady) {
-    setProfileForm({
-      firstName:   profileData.firstName,
-      lastName:    profileData.lastName,
-      phoneNumber: profileData.phoneNumber,
-    });
-    setProfileReady(true);
-  }
+  // Sync form when data loads (only once) — useEffect avoids setState during render
+  useEffect(() => {
+    if (profileData && !profileReady) {
+      setProfileForm({
+        firstName:   profileData.firstName,
+        lastName:    profileData.lastName,
+        phoneNumber: profileData.phoneNumber,
+      });
+      setProfileReady(true);
+    }
+  }, [profileData, profileReady]);
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();

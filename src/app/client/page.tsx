@@ -16,6 +16,7 @@ import {
   IconClock,
 } from "@tabler/icons-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface ClientJob {
   id: number;
@@ -83,8 +84,8 @@ export default function ClientHomePage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("Failed to export jobs:", error);
+    } catch {
+      toast.error("Failed to export jobs. Please try again.");
     }
   };
 

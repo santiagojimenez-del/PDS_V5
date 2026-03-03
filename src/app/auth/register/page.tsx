@@ -155,14 +155,14 @@ export default function RegisterPage() {
           <CardFooter className="flex flex-col gap-3 pt-2">
             <Button
               type="submit"
-              className="h-10 w-full bg-[#ff6600] text-white hover:bg-[#e55c00] font-medium"
+              className="h-10 w-full bg-primary text-white hover:bg-primary/90 font-medium"
               disabled={loading}
             >
               {loading ? "Creating account..." : "Create account"}
             </Button>
             <Link
               href="/auth/login"
-              className="text-sm text-muted-foreground transition-colors hover:text-[#ff6600]"
+              className="text-sm text-muted-foreground transition-colors hover:text-primary"
             >
               Already have an account? Sign in
             </Link>

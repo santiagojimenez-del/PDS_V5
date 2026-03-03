@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { KanbanBoard } from "@/modules/workflow/components/kanban-board";
 import { CalendarView } from "@/modules/workflow/components/calendar-view";
 import { ListView } from "@/modules/workflow/components/list-view";
@@ -41,8 +42,8 @@ export default function JobDashboardPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      console.error("Failed to export jobs:", error);
+    } catch {
+      toast.error("Failed to export jobs. Please try again.");
     }
   };
 
