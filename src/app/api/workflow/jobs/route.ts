@@ -10,8 +10,9 @@ import { z } from "zod";
 export const GET = withAuth(async (_user, req: NextRequest) => {
   const { searchParams } = new URL(req.url);
   const pipeline = searchParams.get("pipeline");
-  const limit = parseInt(searchParams.get("limit") || "200");
-  const offset = parseInt(searchParams.get("offset") || "0");
+  // Cap limit at 500 to prevent abusive queries regardless of caller input
+  const limit = Math.min(Math.max(1, parseInt(searchParams.get("limit") || "200") || 200), 500);
+  const offset = Math.max(0, parseInt(searchParams.get("offset") || "0") || 0);
 
   // Build query - fetch active jobs + recent completed separately
   const selectFields = {

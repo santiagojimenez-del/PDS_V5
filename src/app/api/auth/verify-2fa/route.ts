@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { twoFactorSchema } from "@/modules/auth/schemas/auth-schemas";
 import { verify2FA } from "@/modules/auth/services/auth-service";
 import { successResponse, errorResponse } from "@/lib/utils/api";
+import { twoFactorLimiter } from "@/lib/utils/rate-limiter";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +23,11 @@ export async function POST(request: NextRequest) {
       return errorResponse("Verification token is required", 422);
     }
 
+    // Rate limit by verificationToken — max 5 attempts within its 5-min lifetime
+    if (!twoFactorLimiter.check(verificationToken)) {
+      return errorResponse("Too many verification attempts. Please log in again.", 429);
+    }
+
     // Extract client info
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -33,10 +39,12 @@ export async function POST(request: NextRequest) {
     const result = await verify2FA(verificationToken, code, ip, userAgent);
 
     if (!result.success) {
-      return errorResponse(result.error || "Verification failed", 401);
+      const remaining = twoFactorLimiter.getRemaining(verificationToken);
+      const suffix = remaining > 0 ? ` ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining.` : "";
+      return errorResponse((result.error || "Verification failed") + suffix, 401);
     }
 
-    // Successful verification -- session cookie is set by the auth-service
+    // Successful verification — session cookie is set by the auth-service
     return successResponse({
       user: result.user,
     });

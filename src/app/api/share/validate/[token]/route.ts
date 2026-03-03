@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { shares, pages } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
@@ -25,9 +25,11 @@ export async function GET(
       );
     }
 
-    // Fetch all shares and find matching token
-    // (token is stored as JSON, so we can't use a simple WHERE)
-    const allShares = await db
+    const now = Math.floor(Date.now() / 1000);
+
+    // Query directly using MySQL JSON path — avoids loading the entire table.
+    // The token column stores: { "token": "...", "expire": null | number }
+    const matchedShares = await db
       .select({
         id:           shares.id,
         token:        shares.token,
@@ -35,18 +37,22 @@ export async function GET(
         pageId:       shares.pageId,
         requestToken: shares.requestToken,
       })
-      .from(shares);
+      .from(shares)
+      .where(sql`JSON_UNQUOTE(JSON_EXTRACT(${shares.token}, '$.token')) = ${token}`)
+      .limit(1);
 
-    const now = Math.floor(Date.now() / 1000);
+    if (!matchedShares.length) {
+      return NextResponse.json(
+        { success: false, error: "Invalid or expired share link" },
+        { status: 404 }
+      );
+    }
 
-    const match = allShares.find((row) => {
-      const tokenObj = row.token as { token: string; expire: number | null };
-      if (tokenObj.token !== token) return false;
-      if (tokenObj.expire && now > tokenObj.expire) return false;
-      return true;
-    });
+    const match = matchedShares[0];
 
-    if (!match) {
+    // Validate expiry in application layer
+    const tokenObj = match.token as { token: string; expire: number | null };
+    if (tokenObj.expire && now > tokenObj.expire) {
       return NextResponse.json(
         { success: false, error: "Invalid or expired share link" },
         { status: 404 }
@@ -85,8 +91,6 @@ export async function GET(
         { status: 403 }
       );
     }
-
-    const tokenObj = match.token as { token: string; expire: number | null };
 
     return NextResponse.json({
       success: true,
