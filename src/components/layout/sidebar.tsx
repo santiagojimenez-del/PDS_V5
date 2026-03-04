@@ -107,8 +107,10 @@ export function Sidebar({
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
           className="hidden h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:flex"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
         >
-          {collapsed ? <IconChevronsRight className="h-4 w-4" /> : <IconChevronsLeft className="h-4 w-4" />}
+          {collapsed ? <IconChevronsRight className="h-4 w-4" aria-hidden="true" /> : <IconChevronsLeft className="h-4 w-4" aria-hidden="true" />}
         </Button>
         {/* Close button - mobile only */}
         <Button
@@ -116,8 +118,9 @@ export function Sidebar({
           size="icon"
           onClick={onMobileClose}
           className="h-7 w-7 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden"
+          aria-label="Close navigation menu"
         >
-          <IconX className="h-4 w-4" />
+          <IconX className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 
@@ -130,13 +133,15 @@ export function Sidebar({
               {group.items.length > 1 && !collapsed && (
                 <button
                   onClick={() => toggleGroup(group.name)}
+                  aria-expanded={expandedGroups.has(group.name)}
+                  aria-controls={`nav-group-${group.name}`}
                   className="mb-0.5 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40 transition-colors hover:text-sidebar-foreground/60"
                 >
                   <span>{group.dropdown?.title || group.name}</span>
                   {expandedGroups.has(group.name) ? (
-                    <IconChevronDown className="h-3 w-3" />
+                    <IconChevronDown className="h-3 w-3" aria-hidden="true" />
                   ) : (
-                    <IconChevronRight className="h-3 w-3" />
+                    <IconChevronRight className="h-3 w-3" aria-hidden="true" />
                   )}
                 </button>
               )}
@@ -157,13 +162,15 @@ export function Sidebar({
                           ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                       )}
-                      title={collapsed ? item.title : undefined}
+                      aria-label={collapsed ? item.title : undefined}
+                      aria-current={active ? "page" : undefined}
                     >
                       <span
                         className={cn(
                           "sidebar-icon flex h-5 w-5 shrink-0 items-center justify-center",
                           active ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80"
                         )}
+                        aria-hidden="true"
                         dangerouslySetInnerHTML={{ __html: item.icon }}
                       />
                       {!collapsed && <span className="truncate">{item.title}</span>}
@@ -217,11 +224,14 @@ export function Sidebar({
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={onMobileClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Mobile sidebar */}
       <aside
+        id="mobile-sidebar"
+        aria-label="Navigation menu"
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-sidebar transition-transform duration-300 lg:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full"

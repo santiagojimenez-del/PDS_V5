@@ -118,9 +118,11 @@ export default function LoginPage() {
                 {...register("email")}
                 autoComplete="email"
                 className="h-10"
+                aria-describedby={errors.email ? "email-error" : undefined}
+                aria-invalid={!!errors.email}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p id="email-error" className="text-sm text-destructive" role="alert">{errors.email.message}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -132,9 +134,11 @@ export default function LoginPage() {
                 {...register("password")}
                 autoComplete="current-password"
                 className="h-10"
+                aria-describedby={errors.password ? "password-error" : undefined}
+                aria-invalid={!!errors.password}
               />
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p id="password-error" className="text-sm text-destructive" role="alert">{errors.password.message}</p>
               )}
             </div>
           </CardContent>

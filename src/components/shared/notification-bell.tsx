@@ -115,10 +115,18 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={open} onOpenChange={handleOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative h-8 w-8">
-          <IconBell className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-8 w-8"
+          aria-label={unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}` : "Notifications"}
+        >
+          <IconBell className="h-4 w-4" aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+            <span
+              className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground"
+              aria-hidden="true"
+            >
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
@@ -145,7 +153,7 @@ export function NotificationBell() {
         {/* List */}
         {items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <IconBellOff className="h-8 w-8 text-muted-foreground/40" />
+            <IconBellOff className="h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
             <p className="text-sm text-muted-foreground">No notifications yet</p>
           </div>
         ) : (
@@ -178,7 +186,10 @@ export function NotificationBell() {
                           {item.title}
                         </p>
                         {isUnread && (
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                          <>
+                            <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                            <span className="sr-only">(unread)</span>
+                          </>
                         )}
                       </div>
                       {item.message && (

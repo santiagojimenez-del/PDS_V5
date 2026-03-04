@@ -80,26 +80,29 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
           size="icon"
           onClick={onMobileMenuToggle}
           className="h-8 w-8 lg:hidden"
+          aria-label="Toggle mobile menu"
         >
-          <IconMenu2 className="h-5 w-5" />
+          <IconMenu2 className="h-5 w-5" aria-hidden="true" />
         </Button>
 
-        <nav className="hidden items-center gap-1 text-sm sm:flex">
-          {breadcrumbs.map((crumb) => (
-            <span key={crumb.href} className="flex items-center gap-1">
-              {crumb.isLast ? (
-                <span className="font-medium text-foreground">{crumb.label}</span>
-              ) : (
-                <>
-                  <span className="text-muted-foreground">{crumb.label}</span>
-                  <IconChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-                </>
-              )}
-            </span>
-          ))}
-          {breadcrumbs.length === 0 && (
-            <span className="font-medium text-foreground">Dashboard</span>
-          )}
+        <nav aria-label="Breadcrumb" className="hidden items-center gap-1 text-sm sm:flex">
+          <ol className="flex items-center gap-1 list-none">
+            {breadcrumbs.map((crumb) => (
+              <li key={crumb.href} className="flex items-center gap-1">
+                {crumb.isLast ? (
+                  <span className="font-medium text-foreground" aria-current="page">{crumb.label}</span>
+                ) : (
+                  <>
+                    <span className="text-muted-foreground">{crumb.label}</span>
+                    <IconChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" />
+                  </>
+                )}
+              </li>
+            ))}
+            {breadcrumbs.length === 0 && (
+              <li><span className="font-medium text-foreground" aria-current="page">Dashboard</span></li>
+            )}
+          </ol>
         </nav>
 
         {/* Mobile: just show current page name */}
@@ -121,25 +124,30 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
         {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={`Switch theme (current: ${theme})`}
+            >
               {theme === "dark" ? (
-                <IconMoon className="h-4 w-4" />
+                <IconMoon className="h-4 w-4" aria-hidden="true" />
               ) : theme === "system" ? (
-                <IconDeviceDesktop className="h-4 w-4" />
+                <IconDeviceDesktop className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <IconSun className="h-4 w-4" />
+                <IconSun className="h-4 w-4" aria-hidden="true" />
               )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setTheme("light")}>
-              <IconSun className="mr-2 h-4 w-4" /> Light
+              <IconSun className="mr-2 h-4 w-4" aria-hidden="true" /> Light
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("dark")}>
-              <IconMoon className="mr-2 h-4 w-4" /> Dark
+              <IconMoon className="mr-2 h-4 w-4" aria-hidden="true" /> Dark
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("system")}>
-              <IconDeviceDesktop className="mr-2 h-4 w-4" /> System
+              <IconDeviceDesktop className="mr-2 h-4 w-4" aria-hidden="true" /> System
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -147,7 +155,11 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Button
+              variant="ghost"
+              className="relative h-8 w-8 rounded-full"
+              aria-label={`User menu for ${user.fullName || user.email}`}
+            >
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                   {initials}
