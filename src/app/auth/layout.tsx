@@ -1,3 +1,14 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Sign In",
+    template: "%s | ProDrones",
+  },
+  description: "Sign in to your ProDrones account.",
+  robots: { index: false, follow: false },
+};
+
 export default function AuthLayout({
   children,
 }: {
