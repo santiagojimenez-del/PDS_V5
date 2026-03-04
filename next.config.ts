@@ -1,25 +1,45 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
+  // ── Server packages ───────────────────────────────────────────────────────
   serverExternalPackages: ["@react-pdf/renderer"],
+
+  // ── Security / headers ────────────────────────────────────────────────────
+  poweredByHeader: false,
+
+  // ── Compression ───────────────────────────────────────────────────────────
+  compress: true,
+
+  // ── Image optimization ────────────────────────────────────────────────────
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+
+  // ── Package import optimization (tree-shaking for icon libs) ─────────────
+  // Tells Next.js to only bundle the icons actually imported instead of the
+  // entire library, significantly reducing JS bundle size.
+  experimental: {
+    optimizePackageImports: [
+      "@tabler/icons-react",
+      "lucide-react",
+      "@radix-ui/react-icons",
+    ],
+  },
 };
 
-export default withSentryConfig(nextConfig, {
-  // Sentry organization and project (set via SENTRY_ORG / SENTRY_PROJECT env vars)
+// Bundle analyzer — run with: ANALYZE=true npm run build
+const analyzed = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+})(nextConfig);
+
+export default withSentryConfig(analyzed, {
   silent: !process.env.CI,
-
-  // Upload source maps to Sentry only when SENTRY_AUTH_TOKEN is present
   authToken: process.env.SENTRY_AUTH_TOKEN,
-
-  // Disable source map upload when token is not set (local dev / CI without token)
   sourcemaps: {
     disable: !process.env.SENTRY_AUTH_TOKEN,
   },
-
-  // Automatically tree-shake Sentry logger statements in production
   disableLogger: true,
-
-  // Suppress the Sentry banner in terminal output
   telemetry: false,
 });
