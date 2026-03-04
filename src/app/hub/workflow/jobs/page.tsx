@@ -29,8 +29,10 @@ export default function JobDashboardPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
 
   const handleExport = async () => {
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 30_000);
     try {
-      const response = await fetch("/api/workflow/jobs/export");
+      const response = await fetch("/api/workflow/jobs/export", { signal: ac.signal });
       if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
@@ -42,8 +44,14 @@ export default function JobDashboardPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch {
-      toast.error("Failed to export jobs. Please try again.");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        toast.error("Export timed out. Please try again.");
+      } else {
+        toast.error("Failed to export jobs. Please try again.");
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 

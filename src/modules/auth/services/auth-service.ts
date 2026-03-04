@@ -8,7 +8,7 @@ import {
   setSessionCookie,
   clearSessionCookie,
 } from "@/lib/auth/session";
-import { TOKEN_EXPIRY, ROLES } from "@/lib/constants";
+import { TOKEN_EXPIRY, ROLES, MAX_SESSIONS } from "@/lib/constants";
 import type { AuthUser, SessionToken, VerificationToken, UserToken, PasswordResetToken } from "../types";
 import { emailService } from "@/modules/email";
 
@@ -251,6 +251,51 @@ async function createSession(
     console.error("[Auth] Error during new-IP check:", err);
   }
   // ── End new-IP detection ────────────────────────────────────────────────────
+
+  // ── Concurrent session limit ─────────────────────────────────────────────────
+  // Evict the oldest sessions when the user already has MAX_SESSIONS active ones.
+  try {
+    const sessionRow = await db
+      .select({ tokens: users.tokens })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (sessionRow.length) {
+      const now = Math.floor(Date.now() / 1000);
+      const allTokens = parseTokens(sessionRow[0].tokens);
+
+      // Keep only non-expired session tokens; discard all others as-is
+      const activeSessions = allTokens
+        .filter(
+          (t): t is SessionToken =>
+            t.type === "session" && t.expire > now
+        )
+        .sort((a, b) => (a.options?.created ?? 0) - (b.options?.created ?? 0)); // oldest first
+
+      if (activeSessions.length >= MAX_SESSIONS) {
+        // Tokens to evict = oldest (activeSessions.length - MAX_SESSIONS + 1) sessions
+        const evictCount = activeSessions.length - MAX_SESSIONS + 1;
+        const evictSet = new Set(
+          activeSessions.slice(0, evictCount).map((t) => t.token)
+        );
+
+        // Rebuild token list without evicted sessions
+        const pruned = allTokens.filter(
+          (t) => !(t.type === "session" && evictSet.has(t.token))
+        );
+
+        await db
+          .update(users)
+          .set({ tokens: JSON.stringify(pruned) })
+          .where(eq(users.id, userId));
+      }
+    }
+  } catch (err) {
+    // Never block login due to session eviction failure
+    console.error("[Auth] Error during session limit enforcement:", err);
+  }
+  // ── End concurrent session limit ─────────────────────────────────────────────
 
   const token = generateToken(100);
 

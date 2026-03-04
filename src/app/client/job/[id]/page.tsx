@@ -19,8 +19,8 @@ interface ClientJob {
   dateScheduled: string | null;
 }
 
-async function fetchJob(jobId: string) {
-  const res = await fetch("/api/client/jobs");
+async function fetchJob(jobId: string, signal?: AbortSignal) {
+  const res = await fetch("/api/client/jobs", { signal });
   if (!res.ok) throw new Error("Failed to fetch jobs");
   const json = await res.json();
   const job = json.data.jobs.find((j: ClientJob) => j.id === parseInt(jobId, 10));
@@ -45,7 +45,7 @@ export default function ClientJobDetailPage() {
   const id = params.id as string;
   const { data: job, isLoading, isError } = useQuery({
     queryKey: ["client-job", id],
-    queryFn: () => fetchJob(id),
+    queryFn: ({ signal }) => fetchJob(id, signal),
   });
 
   if (isLoading) {

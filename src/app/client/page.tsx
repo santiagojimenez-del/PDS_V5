@@ -37,15 +37,15 @@ interface ClientSite {
   jobCount: number;
 }
 
-async function fetchClientJobs() {
-  const res = await fetch("/api/client/jobs");
+async function fetchClientJobs({ signal }: { signal?: AbortSignal }) {
+  const res = await fetch("/api/client/jobs", { signal });
   if (!res.ok) throw new Error("Failed to fetch jobs");
   const json = await res.json();
   return json.data as { jobs: ClientJob[]; total: number };
 }
 
-async function fetchClientSites() {
-  const res = await fetch("/api/client/sites");
+async function fetchClientSites({ signal }: { signal?: AbortSignal }) {
+  const res = await fetch("/api/client/sites", { signal });
   if (!res.ok) throw new Error("Failed to fetch sites");
   const json = await res.json();
   return json.data as { sites: ClientSite[]; total: number };
@@ -71,8 +71,10 @@ export default function ClientHomePage() {
   });
 
   const handleExportJobs = async () => {
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), 30_000);
     try {
-      const response = await fetch("/api/client/jobs/export");
+      const response = await fetch("/api/client/jobs/export", { signal: ac.signal });
       if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
@@ -84,8 +86,14 @@ export default function ClientHomePage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch {
-      toast.error("Failed to export jobs. Please try again.");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        toast.error("Export timed out. Please try again.");
+      } else {
+        toast.error("Failed to export jobs. Please try again.");
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 

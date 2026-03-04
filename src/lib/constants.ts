@@ -93,3 +93,6 @@ export const ROUTES = {
 
 // Minimum password length — shared across all validation contexts
 export const MIN_PASSWORD_LENGTH = 8;
+
+// Maximum concurrent sessions per user — oldest sessions are evicted when exceeded
+export const MAX_SESSIONS = 5;

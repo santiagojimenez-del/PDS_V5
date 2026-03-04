@@ -33,8 +33,8 @@ export default function SettingsPage() {
   // ── Editable profile ───────────────────────────────────────────────────────
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ["myProfile"],
-    queryFn: async () => {
-      const res = await fetch("/api/users/me/profile");
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/users/me/profile", { signal });
       if (!res.ok) return null;
       return (await res.json()).data as { firstName: string; lastName: string; phoneNumber: string };
     },
@@ -82,8 +82,8 @@ export default function SettingsPage() {
   // ── Notification preferences ───────────────────────────────────────────────
   const { data: notifData, isLoading: notifLoading } = useQuery({
     queryKey: ["notificationPrefs"],
-    queryFn: async () => {
-      const res = await fetch("/api/users/me/notifications");
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/users/me/notifications", { signal });
       if (!res.ok) return null;
       const json = await res.json();
       return json.data.preferences as Record<string, boolean>;
