@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -28,7 +29,7 @@ export default function OnboardContactPage() {
   const [error, setError] = useState("");
 
   // Fetch organizations for selector
-  const { data: orgsData } = useQuery<{ organizations: OrgOption[] }>({
+  const { data: orgsData, isLoading: orgsLoading } = useQuery<{ organizations: OrgOption[] }>({
     queryKey: ["organizations-list"],
     queryFn: async () => {
       const res = await fetch("/api/organizations");
@@ -160,22 +161,26 @@ export default function OnboardContactPage() {
 
               <div className="space-y-1">
                 <Label>Organization (optional)</Label>
-                <Select
-                  value={form.orgId}
-                  onValueChange={(v) => setForm((p) => ({ ...p, orgId: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select organization…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={EMPTY_ORG}>— No organization —</SelectItem>
-                    {orgs.map((o) => (
-                      <SelectItem key={o.id} value={String(o.id)}>
-                        {o.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {orgsLoading ? (
+                  <Skeleton className="h-9 w-full" />
+                ) : (
+                  <Select
+                    value={form.orgId}
+                    onValueChange={(v) => setForm((p) => ({ ...p, orgId: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select organization…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={EMPTY_ORG}>— No organization —</SelectItem>
+                      {orgs.map((o) => (
+                        <SelectItem key={o.id} value={String(o.id)}>
+                          {o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {error && (

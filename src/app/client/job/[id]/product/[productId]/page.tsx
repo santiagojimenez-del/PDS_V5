@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IconPackage, IconArrowLeft, IconMap } from "@tabler/icons-react";
 import Link from "next/link";
 import { VIEWER_PRODUCTS } from "@/lib/constants";
@@ -68,7 +69,11 @@ export default function ClientProductPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
-            <p className="text-muted-foreground text-sm">Loading product information...</p>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-9 w-40" />
+            </div>
           ) : viewerType ? (
             <div className="flex flex-col gap-3">
               <p className="text-sm text-muted-foreground">
