@@ -3,10 +3,20 @@ import type { NextRequest } from "next/server";
 import { registerSchema } from "@/modules/auth/schemas/auth-schemas";
 import { register } from "@/modules/auth/services/auth-service";
 import { successResponse, errorResponse } from "@/lib/utils/api";
+import { registerLimiter, getClientIp } from "@/lib/utils/rate-limiter";
 
 export async function POST(request: NextRequest) {
   let step = "init";
   try {
+    step = "extracting client info";
+    const ip = getClientIp(request.headers);
+    const userAgent = request.headers.get("user-agent") || "unknown";
+
+    step = "rate limiting";
+    if (!registerLimiter.check(ip)) {
+      return errorResponse("Too many registration attempts. Please try again later.", 429);
+    }
+
     step = "reading body";
     const body = await request.json();
 
@@ -19,15 +29,9 @@ export async function POST(request: NextRequest) {
 
     const { email, password, firstName, lastName } = parsed.data;
 
-    step = "extracting client info";
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
-    const userAgent = request.headers.get("user-agent") || "unknown";
-
     step = "calling register";
     const result = await register(email, password, firstName, lastName, ip, userAgent);
+
 
     if (!result.success) {
       return errorResponse(result.error || "Registration failed", 400);

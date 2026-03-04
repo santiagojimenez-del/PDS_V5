@@ -100,9 +100,22 @@ export class RateLimiter {
   }
 }
 
-// Export singleton instance for forgot password
-// 3 attempts per 15 minutes
+// ── Singleton instances ────────────────────────────────────────────────────────
+
+// Forgot password: 3 requests per 15 minutes per email
 export const forgotPasswordLimiter = new RateLimiter(3, 15);
+
+// Register: 10 new accounts per IP per hour (blocks bot signups)
+export const registerLimiter = new RateLimiter(10, 60);
+
+// Reset password token submission: 5 per IP per 15 minutes (blocks token brute-force)
+export const resetPasswordLimiter = new RateLimiter(5, 15);
+
+// Share token validation: 30 per IP per 5 minutes (blocks token enumeration on public endpoint)
+export const shareValidateLimiter = new RateLimiter(30, 5);
+
+// Global search: 60 queries per user per minute (prevents authenticated data harvesting)
+export const searchLimiter = new RateLimiter(60, 1);
 
 // ---------------------------------------------------------------------------
 // LoginAttemptTracker
@@ -210,3 +223,19 @@ export const loginAttemptTracker = new LoginAttemptTracker(3, 60);
 
 // 2FA code verification: 5 attempts per verification token within its 5-min lifetime
 export const twoFactorLimiter = new RateLimiter(5, 10);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Extract the client IP from a Next.js request.
+ * Falls back to "unknown" when running behind a proxy without x-forwarded-for.
+ */
+export function getClientIp(
+  headers: Headers | { get: (name: string) => string | null }
+): string {
+  return (
+    headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headers.get("x-real-ip") ||
+    "unknown"
+  );
+}

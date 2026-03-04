@@ -3,10 +3,20 @@ import type { NextRequest } from "next/server";
 import { resetPasswordSchema } from "@/modules/auth/schemas/auth-schemas";
 import { resetPassword } from "@/modules/auth/services/auth-service";
 import { successResponse, errorResponse } from "@/lib/utils/api";
+import { resetPasswordLimiter, getClientIp } from "@/lib/utils/rate-limiter";
 
 export async function POST(request: NextRequest) {
   let step = "init";
   try {
+    step = "extracting client info";
+    const ip = getClientIp(request.headers);
+    const userAgent = request.headers.get("user-agent") || "unknown";
+
+    step = "rate limiting";
+    if (!resetPasswordLimiter.check(ip)) {
+      return errorResponse("Too many password reset attempts. Please try again later.", 429);
+    }
+
     step = "reading body";
     const body = await request.json();
 
@@ -18,13 +28,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { token, password } = parsed.data;
-
-    step = "extracting client info";
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      request.headers.get("x-real-ip") ||
-      "unknown";
-    const userAgent = request.headers.get("user-agent") || "unknown";
 
     step = "calling reset password";
     const result = await resetPassword(token, password, ip, userAgent);

@@ -10,12 +10,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { shares, pages } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { shareValidateLimiter, getClientIp } from "@/lib/utils/rate-limiter";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ token: string }> }
 ) {
   try {
+    const ip = getClientIp(req.headers);
+    if (!shareValidateLimiter.check(ip)) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { token } = await context.params;
 
     if (!token) {

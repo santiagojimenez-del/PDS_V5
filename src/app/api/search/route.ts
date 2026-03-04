@@ -9,9 +9,17 @@ import { withAuth } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
 import { jobs, sites, organization, users, userMeta } from "@/lib/db/schema";
 import { or, like, eq, and, inArray } from "drizzle-orm";
+import { searchLimiter } from "@/lib/utils/rate-limiter";
 
 export const GET = withAuth(async (user, request: NextRequest) => {
   try {
+    if (!searchLimiter.check(`user:${user.id}`)) {
+      return NextResponse.json(
+        { success: false, error: "Too many search requests. Please slow down." },
+        { status: 429 }
+      );
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get("q");
 
