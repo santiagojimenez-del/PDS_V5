@@ -1,0 +1,70 @@
+import type { Dictionary } from "./en";
+
+const es: Dictionary = {
+  nav: {
+    hub: "Hub",
+    admin: "Administración",
+    client: "Cliente",
+    workflow: "Flujo de Trabajo",
+    jobs: "Trabajos",
+    sites: "Sitios",
+    recurring: "Recurrente",
+    tilesets: "Conjuntos de Tiles",
+    manage: "Gestionar",
+    new: "Nuevo",
+    onboard: "Incorporación",
+    company: "Empresa",
+    contact: "Contacto",
+    users: "Usuarios",
+    search: "Buscar",
+    roles: "Roles",
+    developer: "Desarrollador",
+    "active-visitors": "Visitantes Activos",
+    dashboard: "Panel",
+    billing: "Facturación",
+    scheduling: "Programación",
+    settings: "Configuración",
+  },
+  auth: {
+    login: {
+      title: "Bienvenido de nuevo",
+      subtitle: "Inicia sesión en tu cuenta de ProDrones",
+      email: "Correo electrónico",
+      password: "Contraseña",
+      submit: "Iniciar sesión",
+      submitting: "Iniciando sesión...",
+      forgotPassword: "¿Olvidaste tu contraseña?",
+      createAccount: "Crear cuenta",
+    },
+    forgotPassword: {
+      title: "¿Olvidaste tu contraseña?",
+      description: "Ingresa tu correo para recibir un enlace de restablecimiento",
+      email: "Correo electrónico",
+      submit: "Enviar enlace",
+      submitting: "Enviando...",
+      success: "Revisa tu correo para las instrucciones",
+      backToLogin: "Volver a iniciar sesión",
+      successBody: "Si existe una cuenta con este correo, recibirás un enlace de restablecimiento en breve.",
+      redirecting: "Redirigiendo a la página de inicio de sesión...",
+      returnNow: "Volver ahora",
+    },
+  },
+  theme: {
+    label: "Cambiar tema",
+    light: "Claro",
+    dark: "Oscuro",
+    system: "Sistema",
+  },
+  user: {
+    settings: "Configuración",
+    logout: "Cerrar sesión",
+  },
+  common: {
+    loading: "Cargando...",
+    save: "Guardar",
+    cancel: "Cancelar",
+    search: "Buscar",
+  },
+};
+
+export default es;

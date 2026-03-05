@@ -20,10 +20,13 @@ import {
 import { toast } from "sonner";
 import { useTheme } from "@/components/providers/theme-provider";
 import { IconSun, IconMoon, IconDeviceDesktop } from "@tabler/icons-react";
+import { useTranslation } from "@/lib/i18n/locale-provider";
+import { LanguageSelector } from "@/components/shared/language-selector";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -68,26 +71,29 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      {/* Theme selector */}
-      <div className="absolute right-4 top-4 flex items-center gap-0.5 rounded-lg border bg-card p-1">
-        {([
-          { value: "light", icon: IconSun },
-          { value: "dark", icon: IconMoon },
-          { value: "system", icon: IconDeviceDesktop },
-        ] as const).map(({ value, icon: Icon }) => (
-          <button
-            key={value}
-            onClick={() => setTheme(value)}
-            className={`rounded-md p-1.5 transition-colors ${
-              theme === value
-                ? "bg-primary text-white"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-            title={value.charAt(0).toUpperCase() + value.slice(1)}
-          >
-            <Icon className="h-4 w-4" />
-          </button>
-        ))}
+      {/* Theme + language selectors */}
+      <div className="absolute right-4 top-4 flex items-center gap-1">
+        <LanguageSelector />
+        <div className="flex items-center gap-0.5 rounded-lg border bg-card p-1">
+          {([
+            { value: "light", icon: IconSun },
+            { value: "dark", icon: IconMoon },
+            { value: "system", icon: IconDeviceDesktop },
+          ] as const).map(({ value, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => setTheme(value)}
+              className={`rounded-md p-1.5 transition-colors ${
+                theme === value
+                  ? "bg-primary text-white"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title={t(`theme.${value}`)}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
       </div>
 
       <Card className="w-full max-w-md border shadow-sm">
@@ -111,11 +117,11 @@ export default function ForgotPasswordPage() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Forgot password?</h1>
+            <h1 className="text-xl font-bold tracking-tight">{t("auth.forgotPassword.title")}</h1>
             <CardDescription>
               {submitted
-                ? "Check your email for reset instructions"
-                : "Enter your email to receive a password reset link"}
+                ? t("auth.forgotPassword.success")
+                : t("auth.forgotPassword.description")}
             </CardDescription>
           </div>
         </CardHeader>
@@ -124,7 +130,7 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.forgotPassword.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -144,13 +150,13 @@ export default function ForgotPasswordPage() {
                 className="h-10 w-full bg-primary text-white hover:bg-primary/90 font-medium"
                 disabled={loading}
               >
-                {loading ? "Sending..." : "Send reset link"}
+                {loading ? t("auth.forgotPassword.submitting") : t("auth.forgotPassword.submit")}
               </Button>
               <Link
                 href="/auth/login"
                 className="text-sm text-muted-foreground transition-colors hover:text-primary"
               >
-                Back to sign in
+                {t("auth.forgotPassword.backToLogin")}
               </Link>
             </CardFooter>
           </form>
@@ -158,17 +164,17 @@ export default function ForgotPasswordPage() {
           <CardContent className="space-y-4 pb-6">
             <div className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
               <p className="mb-2">
-                If an account exists with this email, you will receive a password reset link shortly.
+                {t("auth.forgotPassword.successBody")}
               </p>
               <p className="text-xs">
-                Redirecting to login page...
+                {t("auth.forgotPassword.redirecting")}
               </p>
             </div>
             <Link
               href="/auth/login"
               className="block text-center text-sm text-muted-foreground transition-colors hover:text-primary"
             >
-              Return to sign in now
+              {t("auth.forgotPassword.returnNow")}
             </Link>
           </CardContent>
         )}

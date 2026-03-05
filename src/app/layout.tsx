@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { buildMetadata, APP_URL } from "@/lib/seo";
+import { LocaleProvider } from "@/lib/i18n/locale-provider";
+import type { Locale } from "@/lib/i18n";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,13 +39,17 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get("pds-locale")?.value;
+  const locale: Locale = localeCookie === "es" ? "es" : "en";
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link
           rel="stylesheet"
@@ -59,8 +66,10 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           <QueryProvider>
-            {children}
-            <Toaster position="top-right" richColors />
+            <LocaleProvider initialLocale={locale}>
+              {children}
+              <Toaster position="top-right" richColors />
+            </LocaleProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

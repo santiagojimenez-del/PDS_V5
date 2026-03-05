@@ -22,6 +22,8 @@ import {
 import { useTheme } from "@/components/providers/theme-provider";
 import { GlobalSearch } from "@/components/shared/global-search";
 import { NotificationBell } from "@/components/shared/notification-bell";
+import { LanguageSelector } from "@/components/shared/language-selector";
+import { useTranslation } from "@/lib/i18n/locale-provider";
 import type { AuthUser } from "@/modules/auth/types";
 
 interface NavbarProps {
@@ -30,31 +32,12 @@ interface NavbarProps {
   onMobileMenuToggle: () => void;
 }
 
-const BREADCRUMB_LABELS: Record<string, string> = {
-  hub: "Hub",
-  admin: "Admin",
-  client: "Client",
-  workflow: "Workflow",
-  jobs: "Jobs",
-  sites: "Sites",
-  recurring: "Recurring",
-  tilesets: "Tilesets",
-  manage: "Manage",
-  new: "New",
-  onboard: "Onboard",
-  company: "Company",
-  contact: "Contact",
-  users: "Users",
-  search: "Search",
-  roles: "Roles",
-  developer: "Developer",
-  "active-visitors": "Active Visitors",
-};
 
 export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -66,7 +49,7 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
   // Build breadcrumbs from pathname
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbs = segments.map((seg, i) => ({
-    label: BREADCRUMB_LABELS[seg] || seg.charAt(0).toUpperCase() + seg.slice(1),
+    label: t(`nav.${seg}`) !== `nav.${seg}` ? t(`nav.${seg}`) : seg.charAt(0).toUpperCase() + seg.slice(1),
     href: "/" + segments.slice(0, i + 1).join("/"),
     isLast: i === segments.length - 1,
   }));
@@ -100,14 +83,14 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
               </li>
             ))}
             {breadcrumbs.length === 0 && (
-              <li><span className="font-medium text-foreground" aria-current="page">Dashboard</span></li>
+              <li><span className="font-medium text-foreground" aria-current="page">{t("nav.dashboard")}</span></li>
             )}
           </ol>
         </nav>
 
         {/* Mobile: just show current page name */}
         <span className="text-sm font-medium sm:hidden">
-          {breadcrumbs[breadcrumbs.length - 1]?.label || "Dashboard"}
+          {breadcrumbs[breadcrumbs.length - 1]?.label || t("nav.dashboard")}
         </span>
       </div>
 
@@ -116,10 +99,13 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
         <GlobalSearch />
       </div>
 
-      {/* Right: notifications + theme toggle + user menu */}
+      {/* Right: notifications + language + theme toggle + user menu */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* Notifications */}
         <NotificationBell />
+
+        {/* Language selector */}
+        <LanguageSelector />
 
         {/* Theme toggle */}
         <DropdownMenu>
@@ -141,13 +127,13 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setTheme("light")}>
-              <IconSun className="mr-2 h-4 w-4" aria-hidden="true" /> Light
+              <IconSun className="mr-2 h-4 w-4" aria-hidden="true" /> {t("theme.light")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("dark")}>
-              <IconMoon className="mr-2 h-4 w-4" aria-hidden="true" /> Dark
+              <IconMoon className="mr-2 h-4 w-4" aria-hidden="true" /> {t("theme.dark")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("system")}>
-              <IconDeviceDesktop className="mr-2 h-4 w-4" aria-hidden="true" /> System
+              <IconDeviceDesktop className="mr-2 h-4 w-4" aria-hidden="true" /> {t("theme.system")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -184,12 +170,12 @@ export function Navbar({ user, siteTitle, onMobileMenuToggle }: NavbarProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/settings")}>
               <IconSettings className="mr-2 h-4 w-4" />
-              Settings
+              {t("user.settings")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
               <IconLogout className="mr-2 h-4 w-4" />
-              Logout
+              {t("user.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

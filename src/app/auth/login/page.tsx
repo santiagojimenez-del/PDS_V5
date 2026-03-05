@@ -21,9 +21,12 @@ import { toast } from "sonner";
 import { TwoFactorModal } from "@/modules/auth/components/two-factor-modal";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { LOGOS } from "@/lib/constants/assets";
+import { useTranslation } from "@/lib/i18n/locale-provider";
+import { LanguageSelector } from "@/components/shared/language-selector";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [verificationToken, setVerificationToken] = useState("");
@@ -77,8 +80,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      {/* Theme selector */}
-      <div className="absolute right-4 top-4">
+      {/* Theme + language selectors */}
+      <div className="absolute right-4 top-4 flex items-center gap-1">
+        <LanguageSelector />
         <ThemeToggle variant="dropdown" />
       </div>
 
@@ -103,14 +107,14 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Welcome back</h1>
-            <CardDescription>Sign in to your ProDrones account</CardDescription>
+            <h1 className="text-xl font-bold tracking-tight">{t("auth.login.title")}</h1>
+            <CardDescription>{t("auth.login.subtitle")}</CardDescription>
           </div>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.login.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -126,7 +130,7 @@ export default function LoginPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.login.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -148,20 +152,20 @@ export default function LoginPage() {
               className="h-10 w-full bg-primary text-white hover:bg-primary/90 font-medium"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? t("auth.login.submitting") : t("auth.login.submit")}
             </Button>
             <div className="flex items-center justify-between w-full text-sm">
               <Link
                 href="/auth/forgot-password"
                 className="text-muted-foreground transition-colors hover:text-primary"
               >
-                Forgot password?
+                {t("auth.login.forgotPassword")}
               </Link>
               <Link
                 href="/auth/register"
                 className="text-muted-foreground transition-colors hover:text-primary"
               >
-                Create account
+                {t("auth.login.createAccount")}
               </Link>
             </div>
           </CardFooter>
